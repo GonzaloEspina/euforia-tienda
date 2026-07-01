@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CatalogData } from "@/types/salida";
-import { apiUrl } from "@/lib/config";
 import {
   DEFAULT_CATALOG_SORT,
   sortSalidas,
   type CatalogSort,
 } from "@/lib/catalog-sort";
 import { usePreferences } from "@/context/PreferencesContext";
-import { SalidaCard } from "./SalidaCard";import {
+import { SalidaCard } from "./SalidaCard";
+import {
   CatalogFilters,
   filterSalidas,
   buildActiveFilters,
@@ -20,9 +20,8 @@ import { ActiveFiltersBar } from "./ActiveFiltersBar";
 import { CotizacionBanner } from "./CotizacionBanner";
 import { Pagination } from "./Pagination";
 
-export function CatalogView({ initial }: { initial: CatalogData }) {
+export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
   const { priceMode } = usePreferences();
-  const [catalog, setCatalog] = useState(initial);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [tag, setTag] = useState<string | null>(null);
@@ -43,25 +42,12 @@ export function CatalogView({ initial }: { initial: CatalogData }) {
     [search, category, tag, onlyDestacado, onlyPromo]
   );
 
-  const refreshCatalog = useCallback(async () => {
-    try {
-      const res = await fetch(apiUrl("/api/catalog"));
-      if (res.ok) setCatalog(await res.json());
-    } catch {
-      // keep cached
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshCatalog();
-  }, [refreshCatalog]);
-
   useEffect(() => {
     setPage(1);
   }, [search, category, tag, onlyDestacado, onlyPromo, sort, priceMode]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [page]);
 
   const filtered = useMemo(() => {

@@ -5,7 +5,13 @@ import Link from "next/link";
 import type { Salida } from "@/types/salida";
 import { usePreferences } from "@/context/PreferencesContext";
 import { getPriceDisplays } from "@/lib/format";
-import { getSalidaMetaChips, getFinanciacionBaseArs, shouldUseCotizacionUsd } from "@/lib/salida-display";
+import {
+  getCardCotizacionHint,
+  getCardPrimaryAction,
+  getFinanciacionBaseArs,
+  getSalidaMetaChips,
+  shouldUseCotizacionUsd,
+} from "@/lib/salida-display";
 import { getSalidaCoverImage, isDefaultSalidaImage } from "@/lib/salida-media";
 import { FinanciacionCardTeaser } from "./FinanciacionCardTeaser";
 
@@ -19,13 +25,15 @@ export function SalidaCard({ salida }: { salida: Salida }) {
   const priceArs = getFinanciacionBaseArs(salida);
   const cotizarUsd = shouldUseCotizacionUsd(salida, priceMode);
   const showFinancing = !cotizarUsd && Boolean(priceArs);
+  const cotizacionHint = getCardCotizacionHint(salida, priceMode);
+  const primaryAction = getCardPrimaryAction(salida, priceMode);
   const ultimosCupos =
     salida.estado?.toLowerCase().includes("últim") ||
     salida.estado?.toLowerCase().includes("ultim");
 
   return (
     <article className="group flex flex-col rounded-2xl overflow-hidden bg-white border border-sky-100 shadow-lg shadow-sky-100/60 hover:shadow-xl hover:shadow-sky-200/80 hover:border-euforia-sky/40 transition-all duration-300 animate-slide-up">
-      <Link href={`/salida/${salida.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-sky-100">
+      <Link href={`/salida/${salida.slug}`} prefetch className="relative block aspect-[4/3] overflow-hidden bg-sky-100">
         <Image
           src={image}
           alt={salida.titulo}
@@ -66,7 +74,7 @@ export function SalidaCard({ salida }: { salida: Salida }) {
           </span>
         )}
 
-        <Link href={`/salida/${salida.slug}`}>
+        <Link href={`/salida/${salida.slug}`} prefetch>
           <h3 className="font-bold text-lg leading-snug line-clamp-2 text-travel-ink group-hover:text-euforia-sky-dark transition-colors">
             {salida.titulo}
           </h3>
@@ -119,10 +127,8 @@ export function SalidaCard({ salida }: { salida: Salida }) {
               senaPorcentaje={salida.porcentajeSena}
               maxCuotas={salida.maxCuotas}
             />
-          ) : cotizarUsd ? (
-            <p className="text-sm text-travel-ink-muted">
-              Compra en USD vía cotización con un asesor
-            </p>
+          ) : cotizacionHint ? (
+            <p className="text-sm text-travel-ink-muted">{cotizacionHint}</p>
           ) : (
             <p className="text-sm text-travel-ink-muted">
               Consultá financiación con un asesor
@@ -132,13 +138,13 @@ export function SalidaCard({ salida }: { salida: Salida }) {
       </div>
 
       <div className="px-4 pb-4 flex gap-2">
-        {cotizarUsd ? (
+        {primaryAction.variant === "cotizar" ? (
           <>
             <Link
-              href={`/cotizar/${salida.slug}`}
+              href={primaryAction.href}
               className="flex-1 py-3 rounded-xl font-bold text-base text-center bg-euforia-sky-dark hover:bg-euforia-sky text-white transition-all shadow-sm"
             >
-              Cotizar en dólares
+              {primaryAction.label}
             </Link>
             <Link
               href={`/salida/${salida.slug}`}
@@ -152,10 +158,10 @@ export function SalidaCard({ salida }: { salida: Salida }) {
         ) : (
           <>
             <Link
-              href={`/salida/${salida.slug}`}
+              href={primaryAction.href}
               className="flex-1 py-3 rounded-xl font-bold text-base text-center bg-euforia-sky-dark hover:bg-euforia-sky text-white transition-all shadow-sm"
             >
-              Ver detalle
+              {primaryAction.label}
             </Link>
             <Link
               href={`/cotizar/${salida.slug}`}

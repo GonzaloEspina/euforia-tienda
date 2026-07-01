@@ -1,11 +1,13 @@
 import type { PriceCurrencyMode, Salida } from "@/types/salida";
+import { WOO_CHECKOUT_PATH } from "@/lib/config";
 import { getWooBaseUrl } from "@/lib/woocommerce";
 
 export function getDirectPurchaseUrl(
   salidaId: number,
   couponCode?: string
 ): string {
-  const base = `${getWooBaseUrl()}/checkout/?add-to-cart=${salidaId}`;
+  const checkout = WOO_CHECKOUT_PATH.replace(/\/$/, "");
+  const base = `${getWooBaseUrl()}${checkout}/?add-to-cart=${salidaId}`;
   const code = couponCode?.trim();
   if (!code) return base;
   return `${base}&apply_coupon=${encodeURIComponent(code)}`;
@@ -22,6 +24,65 @@ export function hasUsdPrice(salida: Salida): boolean {
 /** Salida sin precio en pesos (solo dólares u otro caso sin ARS). */
 export function isUsdOnlySalida(salida: Salida): boolean {
   return hasUsdPrice(salida) && !hasArsPrice(salida);
+}
+
+export function hasPriceInMode(
+  salida: Salida,
+  priceMode: PriceCurrencyMode
+): boolean {
+  if (priceMode === "ars") return hasArsPrice(salida);
+  if (priceMode === "usd") return hasUsdPrice(salida);
+  return hasArsPrice(salida) || hasUsdPrice(salida);
+}
+
+export function getCardPrimaryAction(
+  salida: Salida,
+  priceMode: PriceCurrencyMode
+): { label: string; href: string; variant: "detalle" | "cotizar" } {
+  if (hasPriceInMode(salida, priceMode)) {
+    return {
+      label: "Ver detalle",
+      href: `/salida/${salida.slug}`,
+      variant: "detalle",
+    };
+  }
+
+  if (priceMode === "usd") {
+    return {
+      label: "Cotizar en dólares",
+      href: `/cotizar/${salida.slug}`,
+      variant: "cotizar",
+    };
+  }
+
+  if (priceMode === "ars") {
+    return {
+      label: "Cotizar en pesos",
+      href: `/cotizar/${salida.slug}`,
+      variant: "cotizar",
+    };
+  }
+
+  return {
+    label: "Solicitar cotización",
+    href: `/cotizar/${salida.slug}`,
+    variant: "cotizar",
+  };
+}
+
+export function getCardCotizacionHint(
+  salida: Salida,
+  priceMode: PriceCurrencyMode
+): string | null {
+  if (hasPriceInMode(salida, priceMode)) return null;
+
+  if (priceMode === "usd") {
+    return "Compra en dólares vía cotización con un asesor";
+  }
+  if (priceMode === "ars") {
+    return "Compra en pesos vía cotización con un asesor";
+  }
+  return "Consultá precio con un asesor";
 }
 
 /** Compra online con Mercado Pago no aplica: solo USD o vista en dólares. */

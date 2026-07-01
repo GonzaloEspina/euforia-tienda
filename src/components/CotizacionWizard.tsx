@@ -12,6 +12,7 @@ import {
   EDAD_MAXIMA,
   HABITACION_OPCIONES,
   initialCotizacionForm,
+  isPasajeroMenor,
   NECESIDADES_LABELS,
   TRANSPORTE_OPCIONES,
 } from "@/types/cotizacion";
@@ -50,7 +51,7 @@ export function CotizacionWizard({ salida, personalizada = false }: Props) {
   const progress = ((step + 1) / STEPS.length) * 100;
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
   const updatePasajerosCount = (count: number) => {
@@ -149,7 +150,7 @@ export function CotizacionWizard({ salida, personalizada = false }: Props) {
     `Total: ${form.cantidadPasajeros} pasajero${form.cantidadPasajeros === 1 ? "" : "s"}`,
     ...form.pasajeros.map(
       (p, i) =>
-        `${i + 1}. ${p.nombre} — ${p.edad} años${p.esMenor || Number(p.edad) < 18 ? " (menor)" : ""}`
+        `${i + 1}. ${p.nombre} — ${p.edad} años${isPasajeroMenor(p.edad) ? " (menor de edad)" : ""}`
     ),
   ];
 
@@ -224,7 +225,7 @@ export function CotizacionWizard({ salida, personalizada = false }: Props) {
           : salida!.destino,
         pasajeros: form.pasajeros.map((p) => ({
           ...p,
-          esMenor: p.esMenor || Number(p.edad) < 18,
+          esMenor: isPasajeroMenor(p.edad),
         })),
       };
 
@@ -349,42 +350,26 @@ export function CotizacionWizard({ salida, personalizada = false }: Props) {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass()}>Edad *</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={EDAD_MAXIMA}
-                      value={p.edad}
-                      onChange={(e) => {
-                        const edad = e.target.value;
-                        const pasajeros = [...form.pasajeros];
-                        const num = Number(edad);
-                        pasajeros[i] = {
-                          ...pasajeros[i],
-                          edad,
-                          esMenor: Number.isFinite(num) && num < 18,
-                        };
-                        setForm({ ...form, pasajeros });
-                      }}
-                      className={inputClass()}
-                      required
-                    />
-                  </div>
-                  <label className="flex items-end gap-2 pb-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={p.esMenor}
-                      onChange={(e) => {
-                        const pasajeros = [...form.pasajeros];
-                        pasajeros[i] = { ...pasajeros[i], esMenor: e.target.checked };
-                        setForm({ ...form, pasajeros });
-                      }}
-                      className="rounded border-sky-300"
-                    />
-                    <span className="text-base">Es menor de edad</span>
-                  </label>
+                <div>
+                  <label className={labelClass()}>Edad *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={EDAD_MAXIMA}
+                    value={p.edad}
+                    onChange={(e) => {
+                      const edad = e.target.value;
+                      const pasajeros = [...form.pasajeros];
+                      pasajeros[i] = {
+                        ...pasajeros[i],
+                        edad,
+                        esMenor: isPasajeroMenor(edad),
+                      };
+                      setForm({ ...form, pasajeros });
+                    }}
+                    className={inputClass()}
+                    required
+                  />
                 </div>
               </div>
             ))}

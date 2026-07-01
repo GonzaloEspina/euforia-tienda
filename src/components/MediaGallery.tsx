@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MedioItem } from "@/types/salida";
 import { isDefaultSalidaImage } from "@/lib/salida-media";
 
@@ -28,6 +28,7 @@ function embedUrl(url: string): string {
 export function MediaGallery({ medios }: { medios: MedioItem[] }) {
   const [active, setActive] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const touchStartX = useRef(0);
 
   const imageIndices = useMemo(
     () =>
@@ -61,6 +62,21 @@ export function MediaGallery({ medios }: { medios: MedioItem[] }) {
       setActive(imageIndices[pos + 1]);
     else if (imageIndices.length > 0) setActive(imageIndices[0]);
   }, [active, imageIndices]);
+
+  const handleLightboxTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? 0;
+  }, []);
+
+  const handleLightboxTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const endX = e.changedTouches[0]?.clientX ?? 0;
+      const diff = touchStartX.current - endX;
+      if (Math.abs(diff) < 48) return;
+      if (diff > 0) goNext();
+      else goPrev();
+    },
+    [goNext, goPrev]
+  );
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -220,8 +236,10 @@ export function MediaGallery({ medios }: { medios: MedioItem[] }) {
           )}
 
           <div
-            className="relative w-full max-w-5xl aspect-[16/10]"
+            className="relative w-full max-w-5xl aspect-[16/10] touch-pan-y"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleLightboxTouchStart}
+            onTouchEnd={handleLightboxTouchEnd}
           >
             <Image
               src={current.url}

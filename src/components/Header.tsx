@@ -6,8 +6,13 @@ import { staticUrl } from "@/lib/config";
 import { PriceModeToggle } from "./PriceModeToggle";
 
 const NAV = [
-  { href: "/", label: "Salidas" },
-  { href: "/cotizar/personalizada", label: "Cotización" },
+  { href: "/", label: "Salidas", external: false },
+  { href: "/cotizar/personalizada", label: "Cotización", external: false },
+  {
+    href: "https://viajaconeuforia.com/",
+    label: "Volver a la página principal",
+    external: true,
+  },
 ] as const;
 
 export function Header() {
@@ -29,15 +34,26 @@ export function Header() {
         </Link>
 
         <nav className="flex flex-wrap items-center justify-end gap-1 sm:gap-2 ml-auto">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) =>
+            item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
+              >
+                <span className="hidden lg:inline">{item.label}</span>
+                <span className="lg:hidden">Inicio</span>
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
           <div className="hidden sm:block">
             <PriceModeToggle compact />
           </div>

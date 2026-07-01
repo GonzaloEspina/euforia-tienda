@@ -6,6 +6,11 @@ export interface PasajeroCotizacion {
 
 export const EDAD_MAYORIA = 18;
 export const EDAD_MAXIMA = 100;
+
+export function isPasajeroMenor(edad: string | number): boolean {
+  const num = Number(edad);
+  return Number.isFinite(num) && num >= 0 && num < EDAD_MAYORIA;
+}
 export interface NecesidadesEspeciales {
   movilidadReducida: boolean;
   sillaRuedas: boolean;

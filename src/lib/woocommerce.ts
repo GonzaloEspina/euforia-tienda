@@ -1,9 +1,11 @@
+import { unstable_cache } from "next/cache";
 import type {
   CatalogData,
   MedioItem,
   Salida,
   WooCategory,
 } from "@/types/salida";
+import { WOO_CHECKOUT_PATH } from "@/lib/config";
 import { DEFAULT_SALIDA_IMAGE } from "@/lib/salida-media";
 
 const WOO_URL =
@@ -35,12 +37,12 @@ async function wooFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const auth = authHeader();
   const response = await fetch(`${getWooBaseUrl()}${path}`, {
     ...init,
+    next: { revalidate: 300 },
     headers: {
       "Content-Type": "application/json",
       ...(auth ? { Authorization: auth } : {}),
       ...(init.headers ?? {}),
     },
-    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -52,7 +54,7 @@ async function wooFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 async function storeFetch<T>(path: string): Promise<T> {
   const response = await fetch(`${getWooBaseUrl()}${path}`, {
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
   if (!response.ok) {
     throw new Error(`Store API ${path}: ${response.status}`);
@@ -459,7 +461,7 @@ export function computeCatalogVersion(salidas: Salida[]): string {
   return `v${Math.abs(hash)}-${salidas.length}`;
 }
 
-export async function fetchCatalog(): Promise<CatalogData> {
+async function fetchCatalogFromWoo(): Promise<CatalogData> {
   const [products, categories, v3Map] = await Promise.all([
     fetchAllStorePages<StoreProduct>("/wp-json/wc/store/v1/products"),
     fetchAllStorePages<WooCategory>(
@@ -495,6 +497,13 @@ export async function fetchCatalog(): Promise<CatalogData> {
   };
 }
 
+export async function fetchCatalog(): Promise<CatalogData> {
+  return unstable_cache(fetchCatalogFromWoo, ["woocommerce-catalog"], {
+    revalidate: 300,
+    tags: ["catalog"],
+  })();
+}
+
 export async function fetchSalidaBySlug(slug: string): Promise<Salida | null> {
   const catalog = await fetchCatalog();
   return catalog.salidas.find((s) => s.slug === slug) ?? null;
@@ -516,5 +525,5 @@ export async function proxyCartRequest(
   return response;
 }
 
-export const CHECKOUT_URL = `${getWooBaseUrl()}/checkout`;
+export const CHECKOUT_URL = `${getWooBaseUrl()}${WOO_CHECKOUT_PATH.replace(/\/$/, "")}`;
 export const ACCOUNT_URL = `${getWooBaseUrl()}/mi-cuenta`;

@@ -1,5 +1,5 @@
 import type { CotizacionRequest } from "@/types/cotizacion";
-import { NECESIDADES_LABELS } from "@/types/cotizacion";
+import { isPasajeroMenor, NECESIDADES_LABELS } from "@/types/cotizacion";
 
 const TAG_WEB = "Cotización desde Web";
 
@@ -33,7 +33,7 @@ export function formatCotizacionForAgent(data: CotizacionRequest): string {
 
   lines.push("── PASAJEROS ──");
   data.pasajeros.forEach((p, i) => {
-    const menor = p.esMenor ? " (menor)" : "";
+    const menor = isPasajeroMenor(p.edad) ? " (menor de edad)" : "";
     lines.push(
       `${i + 1}. ${p.nombre || "Sin nombre"} — ${p.edad || "?"} años${menor}`
     );
