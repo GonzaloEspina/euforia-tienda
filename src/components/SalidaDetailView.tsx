@@ -13,13 +13,13 @@ import { PriceModeToggle } from "./PriceModeToggle";
 import { PoliticaCancelacion } from "./PoliticaCancelacion";
 import { CuponDescuento, type CuponAplicado } from "./CuponDescuento";
 import { PaquetesSimilares } from "./PaquetesSimilares";
+import { ComprarAhoraButton } from "./ComprarAhoraButton";
 import { AsideLayout, AsideAwareSection } from "./AsideLayout";
 import { usePreferences } from "@/context/PreferencesContext";
 import { useRegisterWhatsAppSalida } from "@/context/WhatsAppContext";
 import { decodeHtmlEntities, getPriceDisplays } from "@/lib/format";
 import {
   canPurchaseOnline,
-  getDirectPurchaseUrl,
   getFinanciacionBaseArs,
   getSalidaMetaChips,
   shouldUseCotizacionUsd,
@@ -100,7 +100,6 @@ export function SalidaDetailView({
   const [cupon, setCupon] = useState<CuponAplicado | null>(null);
   const prices = getPriceDisplays(salida, priceMode);
   const metaChips = getSalidaMetaChips(salida);
-  const purchaseUrl = getDirectPurchaseUrl(salida.id, cupon?.code);
   const priceArsFinanciacion = getFinanciacionBaseArs(salida);
   const precioListaParaCuotas = usesListaPriceForFinanciacion(salida);
   const cotizarUsd = shouldUseCotizacionUsd(salida, priceMode);
@@ -192,12 +191,13 @@ export function SalidaDetailView({
           </button>
         )
       ) : puedeComprar ? (
-        <a
-          href={purchaseUrl}
-          className="block w-full py-3.5 rounded-xl font-bold text-base text-center text-white bg-euforia-sky-dark hover:bg-euforia-sky transition-all shadow-sm"
+        <ComprarAhoraButton
+          salidaId={salida.id}
+          couponCode={cupon?.code}
+          className="block w-full py-3.5 rounded-xl font-bold text-base text-center text-white bg-euforia-sky-dark hover:bg-euforia-sky transition-all shadow-sm disabled:opacity-60"
         >
           Comprar ahora
-        </a>
+        </ComprarAhoraButton>
       ) : (
         <button
           type="button"
