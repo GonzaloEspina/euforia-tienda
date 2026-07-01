@@ -1,18 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { hasCartCookie } from "@/lib/woo-session";
 import { getWooSiteUrl } from "@/lib/checkout-url";
 
 export const CHECKOUT_CART_CHANGED = "euforia-checkout-cart-changed";
 
 export function notifyCheckoutCartChanged(): void {
   window.dispatchEvent(new Event(CHECKOUT_CART_CHANGED));
-}
-
-function hasCartCookie(): boolean {
-  return /(?:^|;\s*)woocommerce_items_in_cart=1(?:;|$)/.test(
-    document.cookie
-  );
 }
 
 async function checkClassicCart(): Promise<boolean> {

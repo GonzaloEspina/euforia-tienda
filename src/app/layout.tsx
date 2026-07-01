@@ -6,6 +6,7 @@ import { PreferencesProvider } from "@/context/PreferencesContext";
 import { CartProvider } from "@/context/CartContext";
 import { WhatsAppProvider } from "@/context/WhatsAppContext";
 import { PwaManager } from "@/components/PwaManager";
+import { WooSessionBootstrap } from "@/components/WooSessionBootstrap";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 
 const outfit = Outfit({
@@ -89,6 +90,7 @@ export default function RootLayout({
             </div>
             <WhatsAppFloat />
             <PwaManager />
+            <WooSessionBootstrap />
             </WhatsAppProvider>
           </CartProvider>
         </PreferencesProvider>

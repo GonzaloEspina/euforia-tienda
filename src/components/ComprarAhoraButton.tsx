@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getCheckoutUrl, getWooSiteUrl } from "@/lib/checkout-url";
 import { notifyCheckoutCartChanged } from "@/hooks/useCheckoutCart";
+import { primeWooSession, waitForCartReady } from "@/lib/woo-session";
 
 interface Props {
   salidaId: number;
@@ -54,6 +55,8 @@ export function ComprarAhoraButton({
     setError(null);
 
     try {
+      await primeWooSession();
+
       const added = await wooAjax("add_to_cart", {
         product_id: String(salidaId),
         quantity: "1",
@@ -67,6 +70,8 @@ export function ComprarAhoraButton({
       if (code) {
         await wooAjax("apply_coupon", { coupon_code: code });
       }
+
+      await waitForCartReady();
 
       notifyCheckoutCartChanged();
       window.location.replace(getCheckoutUrl());
