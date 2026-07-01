@@ -1,35 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { apiUrl } from "@/lib/config";
-
-const CART_TOKEN_KEY = "euforia-cart-token";
-const CART_NONCE_KEY = "euforia-cart-nonce";
-
-function storeCartHeaders(res: Response) {
-  const cartToken = res.headers.get("Cart-Token");
-  if (cartToken) sessionStorage.setItem(CART_TOKEN_KEY, cartToken);
-
-  const nonce = res.headers.get("Nonce");
-  if (nonce) sessionStorage.setItem(CART_NONCE_KEY, nonce);
-}
-
-function cartRequestHeaders(): HeadersInit {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  const cartToken = sessionStorage.getItem(CART_TOKEN_KEY);
-  if (cartToken) headers["Cart-Token"] = cartToken;
-  const nonce = sessionStorage.getItem(CART_NONCE_KEY);
-  if (nonce) headers.Nonce = nonce;
-  return headers;
-}
+import { getCheckoutUrl, getWooSiteUrl } from "@/lib/checkout-url";
+import { notifyCheckoutCartChanged } from "@/hooks/useCheckoutCart";
 
 interface Props {
   salidaId: number;
   couponCode?: string;
   className?: string;
   children: React.ReactNode;
+}
+
+async function wooAjax(
+  action: "add_to_cart" | "apply_coupon",
+  params: Record<string, string>
+): Promise<{ ok: boolean; message?: string }> {
+  const wooUrl = getWooSiteUrl();
+  const res = await fetch(`${wooUrl}/?wc-ajax=${action}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params).toString(),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    return { ok: false, message: text || "Error de WooCommerce" };
+  }
+
+  try {
+    const data = JSON.parse(text) as { error?: boolean; message?: string };
+    if (data.error) {
+      return { ok: false, message: data.message ?? "No se pudo completar la acción" };
+    }
+  } catch {
+    // Respuesta no JSON; si el status es 200, asumimos éxito.
+  }
+
+  return { ok: true };
 }
 
 export function ComprarAhoraButton({
@@ -46,36 +54,22 @@ export function ComprarAhoraButton({
     setError(null);
 
     try {
-      const res = await fetch(apiUrl("/api/cart/buy-now"), {
-        method: "POST",
-        credentials: "include",
-        headers: cartRequestHeaders(),
-        body: JSON.stringify({
-          id: salidaId,
-          coupon: couponCode,
-        }),
+      const added = await wooAjax("add_to_cart", {
+        product_id: String(salidaId),
+        quantity: "1",
       });
 
-      storeCartHeaders(res);
-      const data = (await res.json()) as {
-        ok?: boolean;
-        checkoutUrl?: string;
-        message?: string;
-        couponApplied?: boolean;
-        couponCode?: string;
-      };
-
-      if (res.ok && data.checkoutUrl) {
-        let url = data.checkoutUrl;
-        if (data.couponCode && data.couponApplied === false) {
-          const separator = url.includes("?") ? "&" : "?";
-          url += `${separator}apply_coupon=${encodeURIComponent(data.couponCode)}`;
-        }
-        window.location.replace(url);
-        return;
+      if (!added.ok) {
+        throw new Error(added.message ?? "No se pudo agregar el producto");
       }
 
-      throw new Error(data.message ?? "No se pudo iniciar la compra");
+      const code = couponCode?.trim();
+      if (code) {
+        await wooAjax("apply_coupon", { coupon_code: code });
+      }
+
+      notifyCheckoutCartChanged();
+      window.location.replace(getCheckoutUrl());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al comprar");
       setLoading(false);

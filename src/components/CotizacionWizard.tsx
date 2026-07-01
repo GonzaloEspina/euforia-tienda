@@ -345,7 +345,7 @@ export function CotizacionWizard({ salida, personalizada = false }: Props) {
                       pasajeros[i] = { ...pasajeros[i], nombre: e.target.value };
                       setForm({ ...form, pasajeros });
                     }}
-                    className={inputClass()}
+                    className={`${inputClass()} placeholder:text-transparent sm:placeholder:text-travel-ink-muted`}
                     placeholder="Como figura en el documento"
                     required
                   />

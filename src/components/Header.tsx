@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { staticUrl } from "@/lib/config";
 import { PriceModeToggle } from "./PriceModeToggle";
+import { CheckoutCartButton } from "./CheckoutCartButton";
 
 const NAV = [
   { href: "/", label: "Salidas", external: false },
@@ -54,6 +55,7 @@ export function Header() {
               </Link>
             )
           )}
+          <CheckoutCartButton />
           <div className="hidden sm:block">
             <PriceModeToggle compact />
           </div>

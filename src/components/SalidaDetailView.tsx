@@ -22,6 +22,7 @@ import {
   canPurchaseOnline,
   getFinanciacionBaseArs,
   getSalidaMetaChips,
+  shouldOfferCotizacion,
   shouldUseCotizacionUsd,
   usesListaPriceForFinanciacion,
 } from "@/lib/salida-display";
@@ -104,6 +105,7 @@ export function SalidaDetailView({
   const precioListaParaCuotas = usesListaPriceForFinanciacion(salida);
   const cotizarUsd = shouldUseCotizacionUsd(salida, priceMode);
   const puedeComprar = canPurchaseOnline(salida, priceMode);
+  const ofrecerCotizacion = shouldOfferCotizacion(salida, priceMode);
   const cotizarUrl = `/cotizar/${salida.slug}`;
   const titulo = decodeHtmlEntities(salida.titulo);
 
@@ -198,6 +200,13 @@ export function SalidaDetailView({
         >
           Comprar ahora
         </ComprarAhoraButton>
+      ) : ofrecerCotizacion ? (
+        <Link
+          href={cotizarUrl}
+          className="block w-full py-3.5 rounded-xl font-bold text-base text-center text-white bg-euforia-sky-dark hover:bg-euforia-sky transition-all shadow-sm"
+        >
+          Solicitar cotización
+        </Link>
       ) : (
         <button
           type="button"
@@ -208,7 +217,7 @@ export function SalidaDetailView({
         </button>
       )}
 
-      {!cotizarUsd && (
+      {!cotizarUsd && puedeComprar && (
         <Link
           href={cotizarUrl}
           className="block w-full py-3.5 rounded-xl font-semibold text-base text-center border-2 border-euforia-sky-dark text-euforia-sky-dark hover:bg-sky-50 transition-all"

@@ -104,6 +104,16 @@ export function canPurchaseOnline(
   return salida.isPurchasable;
 }
 
+/** Hay cupos pero la compra online no aplica (sin precio ARS, USD, etc.). */
+export function shouldOfferCotizacion(
+  salida: Salida,
+  priceMode: PriceCurrencyMode
+): boolean {
+  if (!salida.isInStock) return false;
+  if (canPurchaseOnline(salida, priceMode)) return false;
+  return true;
+}
+
 export function getFinanciacionLabel(maxCuotas = 12): string {
   return `Hasta ${maxCuotas} cuotas · Consultá financiación`;
 }
