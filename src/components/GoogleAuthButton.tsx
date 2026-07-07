@@ -28,7 +28,11 @@ export function GoogleAuthButton() {
         </Link>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: CANONICAL_TIENDA_URL })}
+          onClick={() =>
+            signOut({
+              callbackUrl: `${CANONICAL_TIENDA_URL}/login`,
+            })
+          }
           className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
           title={session.user.email ?? "Cerrar sesión"}
         >
@@ -41,7 +45,15 @@ export function GoogleAuthButton() {
   return (
     <button
       type="button"
-      onClick={() => signIn("google", { callbackUrl: CANONICAL_TIENDA_URL })}
+      onClick={() =>
+        signIn(
+          "google",
+          { callbackUrl: CANONICAL_TIENDA_URL },
+          {
+            prompt: "select_account",
+          }
+        )
+      }
       className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
     >
       Ingresar

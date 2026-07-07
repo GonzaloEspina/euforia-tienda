@@ -26,7 +26,11 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() =>
-            signIn("google", { callbackUrl: CANONICAL_MY_ACCOUNT_URL })
+            signIn(
+              "google",
+              { callbackUrl: CANONICAL_MY_ACCOUNT_URL },
+              { prompt: "select_account" }
+            )
           }
           className="w-full py-3 rounded-xl bg-euforia-sky-dark text-white font-semibold hover:bg-euforia-sky transition-colors"
         >
