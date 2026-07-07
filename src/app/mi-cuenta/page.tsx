@@ -1,0 +1,226 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { getWooSiteUrl } from "@/lib/checkout-url";
+
+type Reward = {
+  id: number;
+  title: string;
+  description?: string;
+  benefit_label: string;
+  points_cost: number;
+};
+
+type HistoryEntry = {
+  id: number;
+  note?: string;
+  type: string;
+  points: number;
+};
+
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.message ?? "No se pudo completar la acción.");
+  }
+  return data as T;
+}
+
+function normalizeDni(value: string): string | null {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length < 6 || digits.length > 10) return null;
+  return digits.replace(/^0+/, "") || "0";
+}
+
+export default function MiCuentaPage() {
+  const { data: session, status } = useSession();
+  const [dniInput, setDniInput] = useState("");
+  const [dni, setDni] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const base = `${getWooSiteUrl()}/wp-json/euforia-puntos/v1`;
+
+  const loadData = async (normalizedDni: string) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const [b, r, h] = await Promise.all([
+        fetchJson<{ balance: number }>(`${base}/balance?dni=${normalizedDni}`),
+        fetchJson<{ rewards: Reward[] }>(`${base}/rewards`),
+        fetchJson<{ history: HistoryEntry[] }>(`${base}/history?dni=${normalizedDni}`),
+      ]);
+      setDni(normalizedDni);
+      setBalance(b.balance);
+      setRewards(r.rewards ?? []);
+      setHistory(h.history ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al consultar tus puntos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const normalized = normalizeDni(dniInput);
+    if (!normalized) {
+      setError("Ingresá un DNI válido (6 a 10 dígitos).");
+      return;
+    }
+    await loadData(normalized);
+  };
+
+  const redeem = async (rewardId: number) => {
+    if (!dni) return;
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await fetchJson<{ message?: string; coupon_code?: string }>(
+        `${base}/redeem`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ dni, reward_id: rewardId }),
+        }
+      );
+      setSuccess(
+        result.coupon_code
+          ? `Canje exitoso. Tu cupón es: ${result.coupon_code}`
+          : result.message ?? "Canje exitoso."
+      );
+      await loadData(dni);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo canjear.");
+    }
+  };
+
+  if (status === "loading") {
+    return <section className="max-w-5xl mx-auto px-4 py-10">Cargando cuenta...</section>;
+  }
+
+  if (!session?.user) {
+    return (
+      <section className="max-w-md mx-auto px-4 py-16">
+        <div className="glass rounded-2xl p-6 text-center space-y-4">
+          <h1 className="text-2xl font-bold">Mi cuenta</h1>
+          <p className="text-travel-ink-muted">
+            Ingresá con Google para consultar y canjear tus puntos.
+          </p>
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: "/tienda/mi-cuenta" })}
+            className="w-full py-3 rounded-xl bg-euforia-sky-dark text-white font-semibold"
+          >
+            Ingresar con Google
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <div className="glass rounded-2xl p-5">
+        <h1 className="text-2xl font-bold">Mi cuenta</h1>
+        <p className="text-travel-ink-muted">
+          {session.user.name ?? "Viajero"} · {session.user.email}
+        </p>
+      </div>
+
+      <form onSubmit={onSubmit} className="glass rounded-2xl p-5 space-y-3">
+        <h2 className="text-lg font-semibold">Mis puntos Euforia</h2>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={dniInput}
+            onChange={(e) => setDniInput(e.target.value)}
+            placeholder="Ingresá tu DNI"
+            className="flex-1 rounded-xl border border-sky-200 px-3 py-2"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 rounded-xl bg-euforia-sky-dark text-white font-semibold disabled:opacity-60"
+          >
+            {loading ? "Consultando..." : "Consultar"}
+          </button>
+        </div>
+        <p className="text-sm text-travel-ink-muted">
+          El DNI debe ser el mismo usado en tus compras para acumular puntos.
+        </p>
+      </form>
+
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">{error}</div>}
+      {success && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+          {success}
+        </div>
+      )}
+
+      {dni && balance !== null && (
+        <>
+          <div className="rounded-2xl bg-gradient-to-r from-euforia-sky-dark to-euforia-sky p-5 text-white">
+            <p className="text-sm/5 opacity-90">DNI {dni}</p>
+            <p className="text-4xl font-black">{balance}</p>
+            <p className="text-sm/5 opacity-90">puntos disponibles</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rewards.map((reward) => {
+              const enabled = balance >= reward.points_cost;
+              return (
+                <article key={reward.id} className="glass rounded-2xl p-4 space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-euforia-sky-dark">
+                    {reward.benefit_label}
+                  </p>
+                  <h3 className="font-semibold text-lg">{reward.title}</h3>
+                  <p className="text-sm text-travel-ink-muted min-h-10">
+                    {reward.description || "Canjeá este beneficio con tus puntos."}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-euforia-sky-dark">{reward.points_cost} puntos</span>
+                    <button
+                      type="button"
+                      onClick={() => redeem(reward.id)}
+                      disabled={!enabled || loading}
+                      className="px-3 py-2 rounded-xl bg-euforia-sky-dark text-white text-sm font-semibold disabled:opacity-50"
+                    >
+                      Canjear
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="glass rounded-2xl p-5">
+            <h2 className="text-lg font-semibold mb-3">Historial</h2>
+            <ul className="space-y-2">
+              {history.length === 0 && (
+                <li className="text-sm text-travel-ink-muted">Todavía no hay movimientos.</li>
+              )}
+              {history.map((entry) => (
+                <li key={entry.id} className="flex items-center justify-between text-sm">
+                  <span>{entry.note || entry.type}</span>
+                  <span className={entry.points >= 0 ? "text-emerald-700 font-semibold" : "text-red-700 font-semibold"}>
+                    {entry.points > 0 ? "+" : ""}
+                    {entry.points}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
