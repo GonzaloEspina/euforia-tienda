@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState, type ReactNode } from "react";
 import { fetchWpSession, getWpPuntosApiBase, type WpSession } from "@/lib/wp-session";
 import {
   fetchWpRedemptions,
@@ -19,6 +19,7 @@ type Reward = {
   description?: string;
   benefit_label: string;
   points_cost: number;
+  reward_type?: string;
 };
 
 type HistoryEntry = {
@@ -357,6 +358,154 @@ function RedeemConfirmModal({
   );
 }
 
+function ScrollPanel({
+  title,
+  children,
+  empty,
+}: {
+  title: string;
+  children: ReactNode;
+  empty?: boolean;
+}) {
+  return (
+    <div className="glass rounded-xl p-3 space-y-2">
+      <h2 className="text-sm font-semibold text-travel-ink">{title}</h2>
+      {empty ? (
+        <p className="text-xs text-travel-ink-muted py-2">Todavía no hay registros.</p>
+      ) : (
+        <div className="max-h-52 overflow-y-auto pr-1 space-y-1.5">{children}</div>
+      )}
+    </div>
+  );
+}
+
+function RedemptionRow({ item }: { item: WpRedemption }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-sky-100 bg-white/70 text-xs">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-left hover:bg-sky-50/60"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="font-medium text-travel-ink block truncate">{item.reward_title}</span>
+          <span className="text-travel-ink-muted">{formatRedemptionDate(item.created_at)}</span>
+        </span>
+        <span className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${redemptionStatusColor(item.status)}`}
+          >
+            {item.status_label}
+          </span>
+          <span className="text-travel-ink-muted">{open ? "▲" : "▼"}</span>
+        </span>
+      </button>
+      {open ? (
+        <div className="px-2.5 pb-2 pt-0 space-y-0.5 text-travel-ink-muted border-t border-sky-50">
+          <p>-{item.points_spent} puntos</p>
+          {item.coupon_code ? <p>Cupón: {item.coupon_code}</p> : null}
+          {item.expires_at ? (
+            <p>Vence: {formatRedemptionDate(item.expires_at)}</p>
+          ) : (
+            <p>Sin vencimiento</p>
+          )}
+          {item.used_at ? <p>Usado el {formatRedemptionDate(item.used_at)}</p> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function RewardsSidebar({
+  rewards,
+  balance,
+  session,
+  loading,
+  onRedeemClick,
+}: {
+  rewards: Reward[];
+  balance: number;
+  session: WpSession | null;
+  loading: boolean;
+  onRedeemClick: (reward: Reward) => void;
+}) {
+  const [category, setCategory] = useState<"discounts" | "merch">("discounts");
+
+  const discounts = rewards.filter(
+    (r) => r.reward_type === "percent_discount" || r.reward_type === "fixed_discount" || !r.reward_type
+  );
+  const merch = rewards.filter((r) => r.reward_type === "merchandising");
+  const visible = category === "discounts" ? discounts : merch;
+
+  return (
+    <aside className="glass rounded-xl p-3 space-y-2 lg:sticky lg:top-4 lg:self-start">
+      <h2 className="text-sm font-semibold text-travel-ink">Canjear puntos</h2>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setCategory("discounts")}
+          className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg ${
+            category === "discounts"
+              ? "bg-euforia-sky-dark text-white"
+              : "bg-sky-50 text-travel-ink-muted"
+          }`}
+        >
+          Descuentos
+        </button>
+        <button
+          type="button"
+          onClick={() => setCategory("merch")}
+          className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg ${
+            category === "merch"
+              ? "bg-euforia-sky-dark text-white"
+              : "bg-sky-50 text-travel-ink-muted"
+          }`}
+        >
+          Merchandising
+        </button>
+      </div>
+      <div className="max-h-[28rem] overflow-y-auto space-y-2 pr-0.5">
+        {visible.length === 0 ? (
+          <p className="text-xs text-travel-ink-muted py-2">No hay premios en esta categoría.</p>
+        ) : (
+          visible.map((reward) => {
+            const enabled = session?.logged_in && balance >= reward.points_cost;
+            return (
+              <article
+                key={reward.id}
+                className="rounded-lg border border-sky-100 bg-white/70 p-2.5 space-y-1.5"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-wide text-euforia-sky-dark leading-tight">
+                  {reward.benefit_label}
+                </p>
+                <h3 className="font-semibold text-sm leading-snug">{reward.title}</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-euforia-sky-dark">
+                    {reward.points_cost} pts
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onRedeemClick(reward)}
+                    disabled={!enabled || loading}
+                    className="px-2 py-1 rounded-lg bg-euforia-sky-dark text-white text-xs font-semibold disabled:opacity-50"
+                  >
+                    Canjear
+                  </button>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+      {!session?.logged_in ? (
+        <p className="text-[11px] text-travel-ink-muted">Ingresá para canjear premios.</p>
+      ) : null}
+    </aside>
+  );
+}
+
 function PointsSection({
   dniInput,
   setDniInput,
@@ -371,138 +520,76 @@ function PointsSection({
   onRedeemClick,
 }: PointsSectionProps) {
   return (
-    <div className="space-y-6">
-      <form onSubmit={onSubmit} className="glass rounded-2xl p-5 space-y-3">
-        <h2 className="text-lg font-semibold">Mis puntos Euforia</h2>
-        <p className="text-sm text-travel-ink-muted">
-          Consultá tu saldo con tu DNI. Si estás logueado, lo completamos automáticamente cuando
-          esté cargado en tu cuenta.
-        </p>
+    <div className="space-y-3">
+      <form onSubmit={onSubmit} className="glass rounded-xl p-3 space-y-2">
+        <h2 className="text-sm font-semibold">Mis puntos Euforia</h2>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={dniInput}
             onChange={(e) => setDniInput(e.target.value)}
             placeholder="Ingresá tu DNI"
-            className="flex-1 rounded-xl border border-sky-200 px-3 py-2.5"
+            className="flex-1 rounded-lg border border-sky-200 px-3 py-2 text-sm"
           />
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2.5 rounded-xl bg-euforia-sky-dark text-white font-semibold disabled:opacity-60"
+            className="px-3 py-2 rounded-lg bg-euforia-sky-dark text-white text-sm font-semibold disabled:opacity-60"
           >
-            {loading ? "Consultando..." : "Consultar puntos"}
+            {loading ? "..." : "Consultar"}
           </button>
         </div>
       </form>
 
       {dni && balance !== null && (
         <>
-          <div className="rounded-2xl bg-gradient-to-r from-euforia-sky-dark to-euforia-sky p-5 text-white">
-            <p className="text-sm/5 opacity-90">DNI {dni}</p>
-            <p className="text-4xl font-black">{balance}</p>
-            <p className="text-sm/5 opacity-90">puntos disponibles</p>
-          </div>
-
-          {session?.logged_in && redemptions.length > 0 ? (
-            <div className="glass rounded-2xl p-5 space-y-3">
-              <h2 className="text-lg font-semibold">Mis canjes</h2>
-              <ul className="space-y-3">
-                {redemptions.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm border-b border-sky-100 pb-3 last:border-0 last:pb-0"
-                  >
-                    <div>
-                      <p className="font-medium text-travel-ink">{item.reward_title}</p>
-                      <p className="text-travel-ink-muted">
-                        Canjeado el {formatRedemptionDate(item.created_at)} · -{item.points_spent}{" "}
-                        puntos
-                      </p>
-                      {item.coupon_code ? (
-                        <p className="text-travel-ink-muted">Cupón: {item.coupon_code}</p>
-                      ) : null}
-                      {item.expires_at ? (
-                        <p className="text-travel-ink-muted">
-                          Vence: {formatRedemptionDate(item.expires_at)}
-                        </p>
-                      ) : (
-                        <p className="text-travel-ink-muted">Sin vencimiento</p>
-                      )}
-                    </div>
-                    <span
-                      className={`self-start text-xs font-semibold px-2.5 py-1 rounded-full ${redemptionStatusColor(item.status)}`}
-                    >
-                      {item.status_label}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+          <div className="rounded-xl bg-gradient-to-r from-euforia-sky-dark to-euforia-sky px-4 py-3 text-white flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs opacity-90">DNI {dni}</p>
+              <p className="text-2xl font-black leading-tight">{balance}</p>
+              <p className="text-xs opacity-90">puntos disponibles</p>
             </div>
-          ) : null}
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rewards.map((reward) => {
-              const enabled = session?.logged_in && balance >= reward.points_cost;
-              return (
-                <article key={reward.id} className="glass rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-euforia-sky-dark">
-                    {reward.benefit_label}
-                  </p>
-                  <h3 className="font-semibold text-lg">{reward.title}</h3>
-                  <p className="text-sm text-travel-ink-muted min-h-10">
-                    {reward.description || "Canjeá este beneficio con tus puntos."}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-euforia-sky-dark">
-                      {reward.points_cost} puntos
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onRedeemClick(reward)}
-                      disabled={!enabled || loading}
-                      className="px-3 py-2 rounded-xl bg-euforia-sky-dark text-white text-sm font-semibold disabled:opacity-50"
-                    >
-                      Canjear
-                    </button>
-                  </div>
-                  {!session?.logged_in ? (
-                    <p className="text-xs text-travel-ink-muted">
-                      Ingresá para canjear este premio.
-                    </p>
-                  ) : null}
-                </article>
-              );
-            })}
           </div>
 
-          <div className="glass rounded-2xl p-5">
-            <h2 className="text-lg font-semibold mb-3">Historial de movimientos</h2>
-            <ul className="space-y-2">
-              {history.length === 0 && (
-                <li className="text-sm text-travel-ink-muted">
-                  Todavía no hay movimientos.
-                </li>
-              )}
-              {history.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span>{entry.note || entry.type}</span>
-                  <span
-                    className={
-                      entry.points >= 0
-                        ? "text-emerald-700 font-semibold"
-                        : "text-red-700 font-semibold"
-                    }
+          <div className="grid lg:grid-cols-[1fr_17rem] gap-3 items-start">
+            <div className="space-y-3 min-w-0">
+              {session?.logged_in ? (
+                <ScrollPanel title="Mis canjes" empty={redemptions.length === 0}>
+                  {redemptions.map((item) => (
+                    <RedemptionRow key={item.id} item={item} />
+                  ))}
+                </ScrollPanel>
+              ) : null}
+
+              <ScrollPanel title="Historial de movimientos" empty={history.length === 0}>
+                {history.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-center justify-between gap-2 text-xs py-1 border-b border-sky-50 last:border-0"
                   >
-                    {entry.points > 0 ? "+" : ""}
-                    {entry.points}
-                  </span>
-                </li>
-              ))}
-            </ul>
+                    <span className="truncate text-travel-ink">{entry.note || entry.type}</span>
+                    <span
+                      className={
+                        entry.points >= 0
+                          ? "text-emerald-700 font-semibold shrink-0"
+                          : "text-red-700 font-semibold shrink-0"
+                      }
+                    >
+                      {entry.points > 0 ? "+" : ""}
+                      {entry.points}
+                    </span>
+                  </div>
+                ))}
+              </ScrollPanel>
+            </div>
+
+            <RewardsSidebar
+              rewards={rewards}
+              balance={balance}
+              session={session}
+              loading={loading}
+              onRedeemClick={onRedeemClick}
+            />
           </div>
         </>
       )}

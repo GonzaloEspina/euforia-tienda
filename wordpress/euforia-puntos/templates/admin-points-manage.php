@@ -255,11 +255,12 @@ function euforia_puntos_type_label(string $type): string {
                             <th><?php esc_html_e('Estado', 'euforia-puntos'); ?></th>
                             <th><?php esc_html_e('Cupón', 'euforia-puntos'); ?></th>
                             <th><?php esc_html_e('Vence', 'euforia-puntos'); ?></th>
+                            <th><?php esc_html_e('Acciones', 'euforia-puntos'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($redemptions)) : ?>
-                            <tr><td colspan="6"><?php esc_html_e('Sin canjes.', 'euforia-puntos'); ?></td></tr>
+                            <tr><td colspan="7"><?php esc_html_e('Sin canjes.', 'euforia-puntos'); ?></td></tr>
                         <?php else : ?>
                             <?php foreach ($redemptions as $row) :
                                 $summary = Euforia_Puntos_Redemptions::public_summary($row);
@@ -271,6 +272,19 @@ function euforia_puntos_type_label(string $type): string {
                                     <td><?php echo esc_html($summary['status_label']); ?></td>
                                     <td><?php echo esc_html($summary['coupon_code'] ?: '—'); ?></td>
                                     <td><?php echo esc_html($summary['expires_at'] ?: '—'); ?></td>
+                                    <td>
+                                        <?php if ($summary['status'] === Euforia_Puntos_Redemptions::STATUS_PENDING) : ?>
+                                            <a class="button button-small"
+                                               href="<?php echo esc_url(wp_nonce_url(
+                                                   admin_url('admin.php?page=euforia-puntos-manage&tab=passenger&dni=' . rawurlencode($profile['dni'] ?? $search_dni) . '&action=fulfill_redemption&redemption_id=' . $summary['id']),
+                                                   'euforia_fulfill_redemption'
+                                               )); ?>">
+                                                <?php esc_html_e('Marcar como canjeado', 'euforia-puntos'); ?>
+                                            </a>
+                                        <?php else : ?>
+                                            —
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>

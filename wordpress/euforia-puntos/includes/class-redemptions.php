@@ -12,7 +12,6 @@ class Euforia_Puntos_Redemptions {
     public static function init(): void {
         add_action('woocommerce_order_status_processing', [__CLASS__, 'mark_coupons_used_from_order'], 20);
         add_action('woocommerce_order_status_completed', [__CLASS__, 'mark_coupons_used_from_order'], 20);
-        add_action('woocommerce_order_status_on-hold', [__CLASS__, 'mark_coupons_used_from_order'], 20);
     }
 
     /**
@@ -90,15 +89,20 @@ class Euforia_Puntos_Redemptions {
 
         $status = $row['status'] ?? self::STATUS_PENDING;
         if ($status === 'completed') {
-            $status = self::STATUS_USED;
+            $status = self::STATUS_PENDING;
         }
 
-        if (!empty($row['coupon_code']) && $status === self::STATUS_PENDING) {
+        if ($status === self::STATUS_USED) {
+            return $row;
+        }
+
+        if (!empty($row['coupon_code'])) {
             $coupon = new WC_Coupon($row['coupon_code']);
             if ($coupon->get_id() && $coupon->get_usage_count() > 0) {
-                self::update_status((int) $row['id'], self::STATUS_USED);
+                $used_at = $row['used_at'] ?: current_time('mysql', true);
+                self::update_status((int) $row['id'], self::STATUS_USED, $used_at);
                 $row['status'] = self::STATUS_USED;
-                $row['used_at'] = $row['used_at'] ?: current_time('mysql', true);
+                $row['used_at'] = $used_at;
                 return $row;
             }
         }
@@ -108,10 +112,55 @@ class Euforia_Puntos_Redemptions {
             if ($expires && $expires < time()) {
                 self::update_status((int) $row['id'], self::STATUS_EXPIRED);
                 $row['status'] = self::STATUS_EXPIRED;
+                return $row;
             }
         }
 
+        $row['status'] = $status;
         return $row;
+    }
+
+    public static function mark_fulfilled(int $redemption_id): array {
+        global $wpdb;
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                'SELECT * FROM ' . Euforia_Puntos_Database::redemptions_table() . ' WHERE id = %d',
+                $redemption_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$row) {
+            return ['success' => false, 'message' => 'not_found'];
+        }
+
+        if (($row['status'] ?? '') === self::STATUS_USED) {
+            return ['success' => false, 'message' => 'already_used'];
+        }
+
+        self::update_status($redemption_id, self::STATUS_USED, current_time('mysql', true));
+
+        return ['success' => true];
+    }
+
+    public static function migrate_legacy_completed_statuses(): void {
+        global $wpdb;
+        $table = Euforia_Puntos_Database::redemptions_table();
+        $rows = $wpdb->get_results(
+            "SELECT * FROM {$table} WHERE status = 'completed'",
+            ARRAY_A
+        ) ?: [];
+
+        foreach ($rows as $row) {
+            if (!empty($row['coupon_code'])) {
+                $coupon = new WC_Coupon($row['coupon_code']);
+                if ($coupon->get_id() && $coupon->get_usage_count() > 0) {
+                    self::update_status((int) $row['id'], self::STATUS_USED, $row['used_at'] ?: current_time('mysql', true));
+                    continue;
+                }
+            }
+            self::update_status((int) $row['id'], self::STATUS_PENDING);
+        }
     }
 
     public static function update_status(int $id, string $status, ?string $used_at = null): void {
@@ -169,14 +218,12 @@ class Euforia_Puntos_Redemptions {
     public static function public_summary(array $row): array {
         $row = self::sync_redemption_status($row);
         $status = $row['status'] ?? self::STATUS_PENDING;
-        if ($status === 'completed') {
-            $status = self::STATUS_USED;
-        }
 
         return [
             'id' => (int) $row['id'],
             'reward_title' => $row['reward_title'] ?? '',
             'reward_id' => (int) ($row['reward_id'] ?? 0),
+            'reward_type' => $row['reward_type'] ?? '',
             'points_spent' => (int) ($row['points_spent'] ?? 0),
             'status' => $status,
             'status_label' => self::status_label($status),
@@ -190,13 +237,12 @@ class Euforia_Puntos_Redemptions {
     public static function status_label(string $status): string {
         switch ($status) {
             case self::STATUS_USED:
-            case 'completed':
                 return __('Usado', 'euforia-puntos');
             case self::STATUS_EXPIRED:
                 return __('Vencido', 'euforia-puntos');
             case self::STATUS_PENDING:
             default:
-                return __('Pendiente de uso', 'euforia-puntos');
+                return __('Disponible', 'euforia-puntos');
         }
     }
 }

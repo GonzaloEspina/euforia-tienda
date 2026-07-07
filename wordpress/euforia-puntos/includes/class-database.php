@@ -208,7 +208,7 @@ class Euforia_Puntos_Database {
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT r.*, rw.title AS reward_title
+                'SELECT r.*, rw.title AS reward_title, rw.reward_type AS reward_type
                 FROM ' . $redemptions . ' r
                 LEFT JOIN ' . $rewards . ' rw ON rw.id = r.reward_id
                 WHERE r.dni = %s

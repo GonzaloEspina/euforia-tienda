@@ -124,6 +124,19 @@ class Euforia_Puntos_Admin {
         $message = '';
         $message_type = 'success';
 
+        if (isset($_GET['action'], $_GET['redemption_id'], $_GET['_wpnonce'])
+            && $_GET['action'] === 'fulfill_redemption'
+            && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'euforia_fulfill_redemption')
+        ) {
+            $result = Euforia_Puntos_Redemptions::mark_fulfilled((int) $_GET['redemption_id']);
+            if ($result['success']) {
+                $message = __('Canje marcado como entregado/usado.', 'euforia-puntos');
+            } else {
+                $message_type = 'error';
+                $message = __('No se pudo actualizar el canje.', 'euforia-puntos');
+            }
+        }
+
         if (isset($_POST['euforia_puntos_adjust_nonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['euforia_puntos_adjust_nonce'])), 'euforia_puntos_adjust')) {
             $dni = Euforia_Puntos_DNI::normalize(sanitize_text_field(wp_unslash($_POST['dni'] ?? '')));
             $points = (int) ($_POST['points'] ?? 0);

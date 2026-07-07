@@ -3,7 +3,7 @@ import { getWpPuntosApiBase } from "@/lib/wp-session";
 export type WpRedemption = {
   id: number;
   reward_title: string;
-  reward_id: number;
+  reward_type?: string;
   points_spent: number;
   status: "pending" | "used" | "expired" | "completed";
   status_label: string;
@@ -46,6 +46,6 @@ export function redemptionStatusColor(status: string): string {
       return "bg-slate-200 text-slate-700";
     case "pending":
     default:
-      return "bg-amber-100 text-amber-800";
+      return "bg-sky-100 text-sky-800";
   }
 }
