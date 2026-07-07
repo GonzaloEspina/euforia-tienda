@@ -193,7 +193,16 @@ export default function MiCuentaPage() {
           </div>
         </div>
       ) : (
-        <WpLoginForm />
+        <WpLoginForm
+          onSuccess={async (data) => {
+            setSession(data);
+            setError(null);
+            if (data.dni) {
+              setDniInput(data.dni);
+              await loadData(data.dni);
+            }
+          }}
+        />
       )}
 
       <form onSubmit={onSubmit} className="glass rounded-2xl p-5 space-y-3">

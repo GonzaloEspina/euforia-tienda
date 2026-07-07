@@ -21,12 +21,39 @@ export async function fetchWpSession(): Promise<WpSession> {
       credentials: "include",
       cache: "no-store",
     });
-    const data = (await res.json().catch(() => ({}))) as WpSession & {
-      code?: string;
-    };
+    const data = (await res.json().catch(() => ({}))) as WpSession;
     if (data.logged_in) return data;
     return { logged_in: false };
   } catch {
     return { logged_in: false };
   }
+}
+
+export async function wpLogin(username: string, password: string): Promise<WpSession> {
+  const returnTo = getTiendaAccountUrl();
+  const res = await fetch(`${getWpPuntosApiBase()}/login`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({ username, password, return_to: returnTo }),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as WpSession & {
+    message?: string;
+    code?: string;
+  };
+
+  if (!res.ok) {
+    if (res.status === 404 || data.code === "rest_no_route") {
+      throw new Error("rest_no_route");
+    }
+    throw new Error(data.message ?? "Usuario o contraseña incorrectos.");
+  }
+
+  if (!data.logged_in) {
+    throw new Error("No se pudo iniciar sesión.");
+  }
+
+  return data;
 }

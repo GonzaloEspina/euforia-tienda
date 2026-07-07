@@ -55,6 +55,25 @@ class Euforia_Puntos_REST_API {
                 ],
             ],
         ]);
+
+        register_rest_route('euforia-puntos/v1', '/login', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'login'],
+            'permission_callback' => '__return_true',
+            'args' => [
+                'username' => [
+                    'required' => true,
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'password' => [
+                    'required' => true,
+                ],
+                'return_to' => [
+                    'required' => false,
+                    'sanitize_callback' => 'esc_url_raw',
+                ],
+            ],
+        ]);
     }
 
     public static function can_redeem(WP_REST_Request $request): bool {
@@ -62,7 +81,7 @@ class Euforia_Puntos_REST_API {
         if ($nonce && wp_verify_nonce($nonce, 'wp_rest')) {
             return true;
         }
-        return is_user_logged_in();
+        return self::resolve_current_user_id() > 0;
     }
 
     public static function get_balance(WP_REST_Request $request): WP_REST_Response {
@@ -121,8 +140,6 @@ class Euforia_Puntos_REST_API {
     }
 
     public static function get_me(WP_REST_Request $request): WP_REST_Response {
-        unset($request);
-
         $user_id = self::resolve_current_user_id();
         if (!$user_id) {
             return new WP_REST_Response(['logged_in' => false], 401);
@@ -146,6 +163,33 @@ class Euforia_Puntos_REST_API {
             'dni' => $dni,
             'logout_url' => wp_logout_url($return_to),
         ]);
+    }
+
+    public static function login(WP_REST_Request $request): WP_REST_Response {
+        $username = sanitize_text_field((string) $request->get_param('username'));
+        $password = (string) $request->get_param('password');
+
+        if ($username === '' || $password === '') {
+            return new WP_REST_Response([
+                'message' => __('Completá usuario y contraseña.', 'euforia-puntos'),
+            ], 400);
+        }
+
+        $user = wp_signon([
+            'user_login' => $username,
+            'user_password' => $password,
+            'remember' => true,
+        ], is_ssl());
+
+        if (is_wp_error($user)) {
+            return new WP_REST_Response([
+                'message' => __('Usuario o contraseña incorrectos.', 'euforia-puntos'),
+            ], 401);
+        }
+
+        wp_set_current_user($user->ID);
+
+        return self::get_me($request);
     }
 
     private static function resolve_current_user_id(): int {
