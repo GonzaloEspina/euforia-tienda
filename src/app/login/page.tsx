@@ -1,12 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const CANONICAL_MY_ACCOUNT_URL = "https://viajaconeuforia.com/tienda/mi-cuenta";
-const GOOGLE_SIGNIN_URL =
-  "https://viajaconeuforia.com/tienda/api/auth/signin/google";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -18,12 +16,12 @@ export default function LoginPage() {
     }
   }, [status, router]);
 
-  const handleGoogleLogin = () => {
-    const target = `${GOOGLE_SIGNIN_URL}?callbackUrl=${encodeURIComponent(
-      CANONICAL_MY_ACCOUNT_URL
-    )}&prompt=select_account`;
-    window.location.assign(target);
-  };
+  const handleGoogleLogin = () =>
+    signIn(
+      "google",
+      { callbackUrl: CANONICAL_MY_ACCOUNT_URL },
+      { prompt: "select_account" }
+    );
 
   return (
     <section className="max-w-md mx-auto px-4 py-20">
