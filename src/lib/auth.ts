@@ -6,6 +6,25 @@ const hasGoogleCreds = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
 );
 const CANONICAL_BASE_URL = "https://viajaconeuforia.com/tienda";
+const CANONICAL_ORIGIN = "https://viajaconeuforia.com";
+
+function toCanonicalTiendaUrl(rawUrl: string): string {
+  try {
+    if (rawUrl.startsWith("/")) {
+      const path = rawUrl.startsWith("/tienda") ? rawUrl : `/tienda${rawUrl}`;
+      return `${CANONICAL_ORIGIN}${path}`;
+    }
+
+    const parsed = new URL(rawUrl);
+    const path = parsed.pathname.startsWith("/tienda")
+      ? parsed.pathname
+      : `/tienda${parsed.pathname}`;
+
+    return `${CANONICAL_ORIGIN}${path}${parsed.search}${parsed.hash}`;
+  } catch {
+    return CANONICAL_BASE_URL;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: hasGoogleCreds
@@ -28,20 +47,9 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url }) {
-      // Fuerza siempre el dominio principal para evitar saltos a vercel.app
-      // en flujos OAuth detrás de proxy.
-      if (url.startsWith("/")) {
-        return `${CANONICAL_BASE_URL}${url}`;
-      }
-      try {
-        const parsed = new URL(url);
-        if (parsed.hostname === "viajaconeuforia.com") {
-          return url;
-        }
-      } catch {
-        // noop
-      }
-      return CANONICAL_BASE_URL;
+      // Normaliza SIEMPRE host + basePath para evitar saltos a vercel.app
+      // o callbacks sin /tienda durante OAuth.
+      return toCanonicalTiendaUrl(url);
     },
   },
 };
