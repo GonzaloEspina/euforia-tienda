@@ -1,4 +1,5 @@
 import type { WooCategory } from "@/types/salida";
+import { getStoreHref } from "@/lib/config";
 
 /** Categoría principal para el ítem de menú «Salidas Grupales». */
 export const SALIDAS_GRUPALES_CATEGORY_SLUG = "salidas-grupales";
@@ -57,9 +58,22 @@ export function buildCatalogUrlFilters(filters: CatalogUrlFilters): URLSearchPar
 }
 
 export function salidasGrupalesHref(): string {
-  return `/?cat=${SALIDAS_GRUPALES_CATEGORY_SLUG}#salidas`;
+  const params = buildCatalogUrlFilters({
+    search: "",
+    categorySlug: SALIDAS_GRUPALES_CATEGORY_SLUG,
+    onlyDestacado: false,
+    onlyPromo: false,
+  });
+  return getStoreHref(params, "#salidas");
 }
 
 export function destinationHref(query: string): string {
-  return `/?q=${encodeURIComponent(query)}#salidas`;
+  const params = buildCatalogUrlFilters({
+    search: query,
+    categorySlug: null,
+    onlyDestacado: false,
+    onlyPromo: false,
+  });
+  return getStoreHref(params, "#salidas");
 }
+

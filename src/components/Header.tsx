@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { staticUrl } from "@/lib/config";
+import { getPublicHomeUrl, staticUrl } from "@/lib/config";
 import { salidasGrupalesHref } from "@/lib/home-catalog";
 import { PriceModeToggle } from "./PriceModeToggle";
 import { CheckoutCartButton } from "./CheckoutCartButton";
@@ -14,7 +14,7 @@ const WHATSAPP_URL =
   encodeURIComponent("Hola! Me gustaría más información sobre ");
 
 const NAV = [
-  { href: "/", label: "Inicio", external: false },
+  { href: getPublicHomeUrl(), label: "Inicio", external: true },
   { href: salidasGrupalesHref(), label: "Salidas Grupales", external: false },
   { href: "/cotizar/personalizada", label: "Armá tu Viaje", external: false },
   { href: `${SITE_URL}/blog`, label: "Blog", external: true },
@@ -27,7 +27,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-euforia-sky-dark text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 min-h-[4.25rem] py-2 grid grid-cols-[auto_1fr_auto] items-center gap-3">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+        <a href={getPublicHomeUrl()} className="flex items-center gap-2.5 shrink-0 group">
           <Image
             src={staticUrl("/logo.png")}
             alt="Euforia Viajes"
@@ -37,7 +37,7 @@ export function Header() {
             priority
           />
           <span className="font-black tracking-wide text-lg sm:text-xl">EUFORIA</span>
-        </Link>
+        </a>
 
         <nav className="hidden xl:flex flex-wrap items-center justify-center gap-0.5">
           {NAV.map((item) =>
@@ -45,8 +45,14 @@ export function Header() {
               <a
                 key={item.href}
                 href={item.href}
-                target={item.href.startsWith("http") ? "_blank" : undefined}
-                rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                target={
+                  item.external && !item.href.includes(SITE_URL) ? "_blank" : undefined
+                }
+                rel={
+                  item.external && !item.href.includes(SITE_URL)
+                    ? "noopener noreferrer"
+                    : undefined
+                }
                 className="px-2.5 py-2 rounded-lg text-sm font-medium text-white/95 hover:bg-white/10 transition-all"
               >
                 {item.label}

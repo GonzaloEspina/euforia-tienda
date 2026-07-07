@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
+import { getStoreHref } from "@/lib/config";
 
 export function PromoBanner() {
   const [visible, setVisible] = useState(true);
@@ -17,7 +18,7 @@ export function PromoBanner() {
             {" "}
             · Bariloche, Mendoza, el Norte y Brasil con financiación en cuotas.
           </span>{" "}
-          <Link href="/#salidas" className="underline font-semibold whitespace-nowrap">
+          <Link href={getStoreHref()} className="underline font-semibold whitespace-nowrap">
             Mirá las salidas
           </Link>
         </p>

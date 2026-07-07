@@ -4,6 +4,45 @@ const SITE_ORIGIN =
   process.env.NEXT_PUBLIC_WOO_URL?.replace(/\/$/, "") ??
   "https://viajaconeuforia.com";
 
+/** URL pública de la home de marketing (raíz del dominio). */
+export const PUBLIC_HOME_PATH = "/";
+
+/** URL pública del catálogo / tienda. */
+export const PUBLIC_STORE_PATH = "/tienda";
+
+/** Ruta interna Next (con basePath) de la home de marketing. */
+export const INTERNAL_HOME_ROUTE = "/inicio";
+
+export function getPublicHomeUrl(): string {
+  return `${SITE_ORIGIN}${PUBLIC_HOME_PATH}`;
+}
+
+export function getPublicStoreUrl(
+  query?: URLSearchParams | string,
+  hash?: string
+): string {
+  const qs =
+    typeof query === "string"
+      ? query
+      : query && query.toString()
+        ? query.toString()
+        : "";
+  const suffix = `${qs ? `?${qs}` : ""}${hash ?? ""}`;
+  return `${SITE_ORIGIN}${PUBLIC_STORE_PATH}${suffix}`;
+}
+
+/** Enlace interno Next hacia el catálogo (resuelve a /tienda en el navegador). */
+export function getStoreHref(query?: URLSearchParams | string, hash?: string): string {
+  const qs =
+    typeof query === "string"
+      ? query
+      : query && query.toString()
+        ? query.toString()
+        : "";
+  const suffix = `${qs ? `?${qs}` : ""}${hash ?? ""}`;
+  return `/${suffix}`;
+}
+
 /** Página de cuenta en WordPress (login/registro). */
 export const ACCOUNT_PAGE_URL = `${SITE_ORIGIN}/mi-cuenta/`;
 

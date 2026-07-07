@@ -14,17 +14,6 @@ import {
 } from "@/lib/home-catalog";
 import { usePreferences } from "@/context/PreferencesContext";
 import { SalidaCard } from "./SalidaCard";
-import { HomeHero } from "./HomeHero";
-import { HomeTrustStrip } from "./HomeTrustStrip";
-import { HomePaymentStrip } from "./HomePaymentStrip";
-import { HomeTestimonials } from "./HomeTestimonials";
-import { HomeSection } from "./HomeSection";
-import { HomeExploreDestinations } from "./HomeExploreDestinations";
-import {
-  HomeFeaturedPackages,
-  HomeFeaturedPackagesAction,
-} from "./HomeFeaturedPackages";
-import { HomeWhyEuforia } from "./HomeWhyEuforia";
 import {
   CatalogFilters,
   filterSalidas,
@@ -36,7 +25,7 @@ import { ActiveFiltersBar } from "./ActiveFiltersBar";
 import { CotizacionBanner } from "./CotizacionBanner";
 import { Pagination } from "./Pagination";
 
-export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
+export function StoreCatalogView({ initial: catalog }: { initial: CatalogData }) {
   const { priceMode } = usePreferences();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -185,49 +174,13 @@ export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
 
   return (
     <>
-      <HomeHero
-        totalSalidas={catalog.salidas.length}
-        search={search}
-        onSearchChange={setSearch}
-      />
-      <HomeTrustStrip />
-      <HomePaymentStrip />
-      <HomeTestimonials />
-
-      <HomeSection
-        title="Explorá por destino"
-        subtitle="Elegí un destino y filtramos las salidas disponibles al instante"
-        icon="🌐"
-        variant="white"
-      >
-        <HomeExploreDestinations />
-      </HomeSection>
-
-      <HomeSection
-        title="Paquetes destacados"
-        subtitle="Las mejores promociones y salidas más elegidas por nuestros viajeros"
-        icon="🔥"
-        variant="soft"
-        action={<HomeFeaturedPackagesAction />}
-      >
-        <HomeFeaturedPackages salidas={catalog.salidas} />
-      </HomeSection>
-
-      <HomeSection
-        title="¿Por qué viajar con Euforia?"
-        subtitle="Más de 11 años organizando viajes con atención personalizada"
-        variant="white"
-      >
-        <HomeWhyEuforia />
-      </HomeSection>
-
       <div id="salidas" className="bg-travel-bg-soft border-b border-sky-100/80 scroll-mt-28">
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="mb-8 text-center sm:text-left">
-            <h2 className="text-2xl sm:text-3xl font-bold text-travel-ink">
+            <h1 className="text-2xl sm:text-3xl font-bold text-travel-ink">
               <span className="mr-2">📁</span>
               Todos los paquetes
-            </h2>
+            </h1>
             <p className="text-travel-ink-muted mt-2">
               {filtered.length} paquetes encontrados · Elegí tu próximo destino
             </p>

@@ -1,6 +1,5 @@
-"use client";
-
 import Link from "next/link";
+import { getStoreHref } from "@/lib/config";
 import type { Salida } from "@/types/salida";
 import { SalidaCard } from "./SalidaCard";
 
@@ -29,7 +28,7 @@ export function HomeFeaturedPackages({ salidas }: Props) {
 export function HomeFeaturedPackagesAction() {
   return (
     <Link
-      href="/#salidas"
+      href={getStoreHref()}
       className="text-sm font-semibold text-euforia-sky-dark hover:underline"
     >
       Ver todos →

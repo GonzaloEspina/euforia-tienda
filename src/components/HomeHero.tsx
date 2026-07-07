@@ -1,21 +1,31 @@
 "use client";
 
-import { FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { getStoreHref } from "@/lib/config";
 
 type HomeHeroProps = {
   totalSalidas: number;
-  search: string;
-  onSearchChange: (value: string) => void;
 };
 
 const WHATSAPP_URL =
   "https://wa.me/5492804321400?text=" +
   encodeURIComponent("Hola! Me gustaría más información sobre ");
 
-export function HomeHero({ totalSalidas, search, onSearchChange }: HomeHeroProps) {
+export function HomeHero({ totalSalidas }: HomeHeroProps) {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    document.getElementById("salidas")?.scrollIntoView({ behavior: "smooth" });
+    const query = search.trim();
+    if (query) {
+      const params = new URLSearchParams({ q: query });
+      router.push(getStoreHref(params));
+      return;
+    }
+    router.push(getStoreHref());
   };
 
   return (
@@ -43,12 +53,12 @@ export function HomeHero({ totalSalidas, search, onSearchChange }: HomeHeroProps
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="#salidas"
+            <Link
+              href={getStoreHref()}
               className="inline-flex items-center justify-center rounded-full bg-euforia-sky px-6 py-3 font-bold text-white shadow-lg hover:bg-euforia-sky-light transition-colors"
             >
-              Buscar viajes
-            </a>
+              Mirá todas las salidas
+            </Link>
             <a
               href={WHATSAPP_URL}
               target="_blank"
@@ -66,7 +76,7 @@ export function HomeHero({ totalSalidas, search, onSearchChange }: HomeHeroProps
             <input
               type="search"
               value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="¿A dónde querés viajar?"
               className="flex-1 rounded-xl border-0 px-4 py-3 text-travel-ink placeholder:text-travel-ink-muted focus:outline-none focus:ring-2 focus:ring-euforia-sky/40"
             />
