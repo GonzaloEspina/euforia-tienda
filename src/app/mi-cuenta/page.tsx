@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useState, type ReactNode } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { fetchWpSession, getWpPuntosApiBase, type WpSession } from "@/lib/wp-session";
 import {
   fetchWpRedemptions,
@@ -20,7 +20,14 @@ type Reward = {
   benefit_label: string;
   points_cost: number;
   reward_type?: string;
+  visual_type?: string;
+  image_url?: string;
+  icon?: string;
+  badge_text?: string;
 };
+
+type RewardCategory = "all" | "discounts" | "merch";
+type RewardSort = "points_asc" | "points_desc" | "name_asc" | "name_desc";
 
 type HistoryEntry = {
   id: number;
@@ -418,6 +425,74 @@ function RedemptionRow({ item }: { item: WpRedemption }) {
   );
 }
 
+function RewardVisual({ reward }: { reward: Reward }) {
+  if (reward.visual_type === "image" && reward.image_url) {
+    return (
+      <div className="w-full aspect-[4/3] rounded-lg overflow-hidden bg-sky-50 mb-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={reward.image_url}
+          alt={reward.title}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  const iconKind = reward.icon ?? "gift";
+  const badge = reward.badge_text || (iconKind === "merch" ? "🎁" : "★");
+  const gradient =
+    iconKind === "percent"
+      ? "from-euforia-sky-dark to-euforia-sky"
+      : iconKind === "fixed"
+        ? "from-emerald-600 to-emerald-400"
+        : iconKind === "merch"
+          ? "from-violet-600 to-violet-400"
+          : "from-slate-500 to-slate-400";
+
+  return (
+    <div
+      className={`w-full aspect-[4/3] rounded-lg mb-1.5 bg-gradient-to-br ${gradient} flex flex-col items-center justify-center text-white font-bold`}
+    >
+      {iconKind === "percent" ? (
+        <span className="text-2xl leading-none">%</span>
+      ) : iconKind === "fixed" ? (
+        <span className="text-xl leading-none">$</span>
+      ) : null}
+      <span className="text-sm mt-1 px-2 text-center leading-tight">{badge}</span>
+    </div>
+  );
+}
+
+function filterRewardsByCategory(rewards: Reward[], category: RewardCategory): Reward[] {
+  if (category === "all") return rewards;
+  if (category === "merch") {
+    return rewards.filter((r) => r.reward_type === "merchandising");
+  }
+  return rewards.filter(
+    (r) =>
+      r.reward_type === "percent_discount" ||
+      r.reward_type === "fixed_discount" ||
+      !r.reward_type
+  );
+}
+
+function sortRewards(rewards: Reward[], sort: RewardSort): Reward[] {
+  const copy = [...rewards];
+  switch (sort) {
+    case "points_desc":
+      return copy.sort((a, b) => b.points_cost - a.points_cost || a.title.localeCompare(b.title));
+    case "name_asc":
+      return copy.sort((a, b) => a.title.localeCompare(b.title, "es"));
+    case "name_desc":
+      return copy.sort((a, b) => b.title.localeCompare(a.title, "es"));
+    case "points_asc":
+    default:
+      return copy.sort((a, b) => a.points_cost - b.points_cost || a.title.localeCompare(b.title));
+  }
+}
+
 function RewardsSidebar({
   rewards,
   balance,
@@ -431,41 +506,52 @@ function RewardsSidebar({
   loading: boolean;
   onRedeemClick: (reward: Reward) => void;
 }) {
-  const [category, setCategory] = useState<"discounts" | "merch">("discounts");
+  const [category, setCategory] = useState<RewardCategory>("all");
+  const [sort, setSort] = useState<RewardSort>("points_asc");
 
-  const discounts = rewards.filter(
-    (r) => r.reward_type === "percent_discount" || r.reward_type === "fixed_discount" || !r.reward_type
+  const visible = useMemo(
+    () => sortRewards(filterRewardsByCategory(rewards, category), sort),
+    [rewards, category, sort]
   );
-  const merch = rewards.filter((r) => r.reward_type === "merchandising");
-  const visible = category === "discounts" ? discounts : merch;
 
   return (
     <aside className="glass rounded-xl p-3 space-y-2 lg:sticky lg:top-4 lg:self-start">
       <h2 className="text-sm font-semibold text-travel-ink">Canjear puntos</h2>
-      <div className="flex gap-1">
-        <button
-          type="button"
-          onClick={() => setCategory("discounts")}
-          className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg ${
-            category === "discounts"
-              ? "bg-euforia-sky-dark text-white"
-              : "bg-sky-50 text-travel-ink-muted"
-          }`}
-        >
-          Descuentos
-        </button>
-        <button
-          type="button"
-          onClick={() => setCategory("merch")}
-          className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg ${
-            category === "merch"
-              ? "bg-euforia-sky-dark text-white"
-              : "bg-sky-50 text-travel-ink-muted"
-          }`}
-        >
-          Merchandising
-        </button>
+      <div className="flex flex-wrap gap-1">
+        {(
+          [
+            ["all", "Todos"],
+            ["discounts", "Descuentos"],
+            ["merch", "Merchandising"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setCategory(key)}
+            className={`text-xs font-semibold px-2 py-1.5 rounded-lg ${
+              category === key
+                ? "bg-euforia-sky-dark text-white"
+                : "bg-sky-50 text-travel-ink-muted"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+      <label className="block">
+        <span className="text-[11px] text-travel-ink-muted">Ordenar por</span>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as RewardSort)}
+          className="mt-0.5 w-full rounded-lg border border-sky-200 px-2 py-1.5 text-xs bg-white"
+        >
+          <option value="points_asc">Puntos: menor a mayor</option>
+          <option value="points_desc">Puntos: mayor a menor</option>
+          <option value="name_asc">Nombre: A → Z</option>
+          <option value="name_desc">Nombre: Z → A</option>
+        </select>
+      </label>
       <div className="max-h-[28rem] overflow-y-auto space-y-2 pr-0.5">
         {visible.length === 0 ? (
           <p className="text-xs text-travel-ink-muted py-2">No hay premios en esta categoría.</p>
@@ -475,8 +561,9 @@ function RewardsSidebar({
             return (
               <article
                 key={reward.id}
-                className="rounded-lg border border-sky-100 bg-white/70 p-2.5 space-y-1.5"
+                className="rounded-lg border border-sky-100 bg-white/70 p-2.5 space-y-1"
               >
+                <RewardVisual reward={reward} />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-euforia-sky-dark leading-tight">
                   {reward.benefit_label}
                 </p>
