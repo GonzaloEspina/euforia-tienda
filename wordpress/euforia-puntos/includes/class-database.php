@@ -204,7 +204,9 @@ class Euforia_Puntos_Database {
         $redemptions = self::redemptions_table();
         $rewards = self::rewards_table();
 
-        return $wpdb->get_results(
+        Euforia_Puntos_Redemptions::expire_stale();
+
+        $rows = $wpdb->get_results(
             $wpdb->prepare(
                 'SELECT r.*, rw.title AS reward_title
                 FROM ' . $redemptions . ' r
@@ -217,6 +219,10 @@ class Euforia_Puntos_Database {
             ),
             ARRAY_A
         ) ?: [];
+
+        return array_map(static function (array $row): array {
+            return Euforia_Puntos_Redemptions::sync_redemption_status($row);
+        }, $rows);
     }
 
     public static function get_passenger_profile(string $dni): ?array {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ACCOUNT_PAGE_URL } from "@/lib/config";
 import {
   fetchWpOrders,
   formatOrderDate,
@@ -116,19 +115,11 @@ export function UserOrdersList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold text-travel-ink">Mis pedidos</h2>
-          <p className="text-sm text-travel-ink-muted">
-            Consultá el estado y el detalle de tus compras.
-          </p>
-        </div>
-        <a
-          href={ACCOUNT_PAGE_URL}
-          className="text-sm text-euforia-sky-dark hover:underline shrink-0"
-        >
-          Editar datos en WordPress
-        </a>
+      <div>
+        <h2 className="text-lg font-semibold text-travel-ink">Mis pedidos</h2>
+        <p className="text-sm text-travel-ink-muted">
+          Consultá el estado y el detalle de tus compras.
+        </p>
       </div>
 
       {loading ? (

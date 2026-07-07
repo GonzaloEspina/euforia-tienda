@@ -179,6 +179,19 @@ class Euforia_Puntos_Admin {
             $config['image_url'] = $image_url;
         }
 
+        $expiration_mode = sanitize_key($_POST['expiration_mode'] ?? 'none');
+        if (!in_array($expiration_mode, ['none', 'fixed_date', 'relative'], true)) {
+            $expiration_mode = 'none';
+        }
+        $config['expiration'] = [
+            'mode' => $expiration_mode,
+            'fixed_date' => sanitize_text_field(wp_unslash($_POST['expiration_fixed_date'] ?? '')),
+            'relative_value' => max(1, (int) ($_POST['expiration_relative_value'] ?? 30)),
+            'relative_unit' => in_array($_POST['expiration_relative_unit'] ?? '', ['days', 'months'], true)
+                ? sanitize_key($_POST['expiration_relative_unit'])
+                : 'days',
+        ];
+
         Euforia_Puntos_Rewards::save([
             'id' => !empty($_POST['reward_id']) ? (int) $_POST['reward_id'] : 0,
             'title' => sanitize_text_field(wp_unslash($_POST['title'] ?? '')),

@@ -78,4 +78,28 @@ class Euforia_Puntos_DNI {
 
         return null;
     }
+
+    public static function save_to_user(int $user_id, string $dni): bool {
+        $normalized = self::normalize($dni);
+        if (!$normalized) {
+            return false;
+        }
+
+        update_user_meta($user_id, self::CHECKOUT_FIELD, $normalized);
+        update_user_meta($user_id, '_' . self::CHECKOUT_FIELD, $normalized);
+
+        $account = Euforia_Puntos_Database::get_account($normalized);
+        if ($account && empty($account['user_id'])) {
+            global $wpdb;
+            $wpdb->update(
+                Euforia_Puntos_Database::accounts_table(),
+                ['user_id' => $user_id],
+                ['dni' => $normalized],
+                ['%d'],
+                ['%s']
+            );
+        }
+
+        return true;
+    }
 }

@@ -96,6 +96,10 @@ class Euforia_Puntos_Points_Engine {
             return $redemption_result;
         }
 
+        $redeemed_at = current_time('mysql', true);
+        $expires_at = Euforia_Puntos_Redemptions::calculate_expires_at($reward, $redeemed_at);
+        $initial_status = Euforia_Puntos_Redemptions::STATUS_PENDING;
+
         $new_balance = $balance - $reward['points_cost'];
         global $wpdb;
         $wpdb->update(
@@ -112,11 +116,12 @@ class Euforia_Puntos_Points_Engine {
                 'dni' => $dni,
                 'reward_id' => $reward['id'],
                 'points_spent' => $reward['points_cost'],
-                'status' => $redemption_result['status'] ?? 'completed',
+                'status' => $initial_status,
+                'expires_at' => $expires_at,
                 'coupon_code' => $redemption_result['coupon_code'] ?? null,
                 'meta' => wp_json_encode($redemption_result['meta'] ?? []),
             ],
-            ['%s', '%d', '%d', '%s', '%s', '%s']
+            ['%s', '%d', '%d', '%s', '%s', '%s', '%s']
         );
         $redemption_id = (int) $wpdb->insert_id;
 
@@ -136,7 +141,8 @@ class Euforia_Puntos_Points_Engine {
             'redemption_id' => $redemption_id,
             'coupon_code' => $redemption_result['coupon_code'] ?? null,
             'message' => $redemption_result['message'] ?? __('Canje realizado con éxito.', 'euforia-puntos'),
-            'status' => $redemption_result['status'] ?? 'completed',
+            'status' => $initial_status,
+            'expires_at' => $expires_at,
         ];
     }
 
@@ -148,7 +154,7 @@ class Euforia_Puntos_Points_Engine {
             case Euforia_Puntos_Rewards::TYPE_MERCH:
                 return [
                     'success' => true,
-                    'status' => 'pending',
+                    'status' => Euforia_Puntos_Redemptions::STATUS_PENDING,
                     'message' => __('Solicitud de merchandising registrada. Te contactaremos para coordinar la entrega.', 'euforia-puntos'),
                     'meta' => [
                         'item' => $reward['config']['item_name'] ?? $reward['title'],
@@ -191,6 +197,12 @@ class Euforia_Puntos_Points_Engine {
 
         $coupon->update_meta_data('_euforia_puntos_dni', $dni);
         $coupon->update_meta_data('_euforia_puntos_reward_id', $reward['id']);
+
+        $expires_at = Euforia_Puntos_Redemptions::calculate_expires_at($reward);
+        if ($expires_at) {
+            $coupon->set_date_expires(strtotime($expires_at));
+        }
+
         $coupon_id = $coupon->save();
 
         if (!$coupon_id) {
@@ -199,7 +211,7 @@ class Euforia_Puntos_Points_Engine {
 
         return [
             'success' => true,
-            'status' => 'completed',
+            'status' => Euforia_Puntos_Redemptions::STATUS_PENDING,
             'coupon_code' => $code,
             'coupon_id' => $coupon_id,
             'message' => sprintf(

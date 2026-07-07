@@ -99,6 +99,39 @@ $types = Euforia_Puntos_Rewards::types();
                                    value="<?php echo esc_attr($editing['points_cost'] ?? 100); ?>"></td>
                     </tr>
                     <tr>
+                        <th><label for="expiration_mode"><?php esc_html_e('Vencimiento del canje', 'euforia-puntos'); ?></label></th>
+                        <td>
+                            <?php
+                            $expiration = $editing['config']['expiration'] ?? [];
+                            $exp_mode = $expiration['mode'] ?? 'none';
+                            ?>
+                            <select name="expiration_mode" id="expiration_mode" class="regular-text">
+                                <option value="none" <?php selected($exp_mode, 'none'); ?>><?php esc_html_e('Sin vencimiento', 'euforia-puntos'); ?></option>
+                                <option value="fixed_date" <?php selected($exp_mode, 'fixed_date'); ?>><?php esc_html_e('Fecha fija', 'euforia-puntos'); ?></option>
+                                <option value="relative" <?php selected($exp_mode, 'relative'); ?>><?php esc_html_e('Plazo desde el canje', 'euforia-puntos'); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e('Si vence y no se usó, el canje pasa a estado vencido.', 'euforia-puntos'); ?></p>
+                        </td>
+                    </tr>
+                    <tr class="config-row config-expiration-fixed">
+                        <th><label for="expiration_fixed_date"><?php esc_html_e('Válido hasta', 'euforia-puntos'); ?></label></th>
+                        <td>
+                            <input type="date" name="expiration_fixed_date" id="expiration_fixed_date"
+                                   value="<?php echo esc_attr($expiration['fixed_date'] ?? ''); ?>">
+                        </td>
+                    </tr>
+                    <tr class="config-row config-expiration-relative">
+                        <th><label for="expiration_relative_value"><?php esc_html_e('Plazo desde el canje', 'euforia-puntos'); ?></label></th>
+                        <td>
+                            <input type="number" min="1" name="expiration_relative_value" id="expiration_relative_value"
+                                   value="<?php echo esc_attr($expiration['relative_value'] ?? 30); ?>">
+                            <select name="expiration_relative_unit" id="expiration_relative_unit">
+                                <option value="days" <?php selected($expiration['relative_unit'] ?? 'days', 'days'); ?>><?php esc_html_e('Días', 'euforia-puntos'); ?></option>
+                                <option value="months" <?php selected($expiration['relative_unit'] ?? 'days', 'months'); ?>><?php esc_html_e('Meses', 'euforia-puntos'); ?></option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
                         <th><label for="sort_order"><?php esc_html_e('Orden', 'euforia-puntos'); ?></label></th>
                         <td><input type="number" name="sort_order" id="sort_order"
                                    value="<?php echo esc_attr($editing['sort_order'] ?? 0); ?>"></td>

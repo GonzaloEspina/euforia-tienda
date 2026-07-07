@@ -69,3 +69,33 @@ export async function wpLogin(username: string, password: string): Promise<WpSes
 
   return data;
 }
+
+export type WpAccountUpdate = {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  address_1?: string;
+  address_2?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  dni?: string;
+};
+
+export async function updateWpAccount(payload: WpAccountUpdate): Promise<WpSession> {
+  const res = await fetch(`${getWpPuntosApiBase()}/account`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as WpSession & { message?: string };
+  if (!res.ok || !data.logged_in) {
+    throw new Error(data.message ?? "No se pudieron guardar los datos.");
+  }
+  return data;
+}

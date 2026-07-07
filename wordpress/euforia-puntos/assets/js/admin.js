@@ -11,6 +11,17 @@
     } else if (type === 'merchandising') {
       $('.config-merch').addClass('is-visible');
     }
+    toggleExpirationRows();
+  }
+
+  function toggleExpirationRows() {
+    var mode = $('#expiration_mode').val();
+    $('.config-expiration-fixed, .config-expiration-relative').removeClass('is-visible');
+    if (mode === 'fixed_date') {
+      $('.config-expiration-fixed').addClass('is-visible');
+    } else if (mode === 'relative') {
+      $('.config-expiration-relative').addClass('is-visible');
+    }
   }
 
   function openMediaLibrary() {
@@ -59,6 +70,7 @@
 
   $(document).ready(function () {
     $('#reward_type').on('change', toggleConfigRows);
+    $('#expiration_mode').on('change', toggleExpirationRows);
     toggleConfigRows();
 
     if (window.euforiaPuntosAdmin && euforiaPuntosAdmin.rewardsScreen) {

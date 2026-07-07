@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Euforia Puntos
  * Description: Programa de puntos por compras WooCommerce. Canje de premios y descuentos vinculado por DNI.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Gonzalo Espina
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EUFORIA_PUNTOS_VERSION', '1.0.5');
+define('EUFORIA_PUNTOS_VERSION', '1.0.6');
 define('EUFORIA_PUNTOS_PLUGIN_FILE', __FILE__);
 define('EUFORIA_PUNTOS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EUFORIA_PUNTOS_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -24,6 +24,7 @@ require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-database.php';
 require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-dni.php';
 require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-settings.php';
 require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-rewards.php';
+require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-redemptions.php';
 require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-points-engine.php';
 require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once EUFORIA_PUNTOS_PLUGIN_DIR . 'includes/class-woocommerce-account.php';
@@ -57,15 +58,37 @@ final class Euforia_Puntos_Plugin {
         }
 
         self::maybe_migrate_dni_field();
+        self::maybe_migrate_redemptions();
 
         Euforia_Puntos_Settings::init();
         Euforia_Puntos_Rewards::init();
+        Euforia_Puntos_Redemptions::init();
         Euforia_Puntos_Points_Engine::init();
         Euforia_Puntos_WooCommerce::init();
         Euforia_Puntos_WooCommerce_Account::init();
         Euforia_Puntos_REST_API::init();
         Euforia_Puntos_Admin::init();
         Euforia_Puntos_Frontend::init();
+    }
+
+    private static function maybe_migrate_redemptions(): void {
+        $version = get_option('euforia_puntos_db_version', '1.0.0');
+        if (version_compare($version, '1.0.6', '>=')) {
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'euforia_puntos_redemptions';
+        $columns = $wpdb->get_col("DESC {$table}", 0);
+
+        if (!in_array('expires_at', $columns, true)) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN expires_at datetime DEFAULT NULL AFTER status");
+        }
+        if (!in_array('used_at', $columns, true)) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN used_at datetime DEFAULT NULL AFTER expires_at");
+        }
+
+        update_option('euforia_puntos_db_version', EUFORIA_PUNTOS_VERSION);
     }
 
     private static function maybe_migrate_dni_field(): void {

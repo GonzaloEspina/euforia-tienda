@@ -254,19 +254,23 @@ function euforia_puntos_type_label(string $type): string {
                             <th><?php esc_html_e('Puntos', 'euforia-puntos'); ?></th>
                             <th><?php esc_html_e('Estado', 'euforia-puntos'); ?></th>
                             <th><?php esc_html_e('Cupón', 'euforia-puntos'); ?></th>
+                            <th><?php esc_html_e('Vence', 'euforia-puntos'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($redemptions)) : ?>
-                            <tr><td colspan="5"><?php esc_html_e('Sin canjes.', 'euforia-puntos'); ?></td></tr>
+                            <tr><td colspan="6"><?php esc_html_e('Sin canjes.', 'euforia-puntos'); ?></td></tr>
                         <?php else : ?>
-                            <?php foreach ($redemptions as $row) : ?>
+                            <?php foreach ($redemptions as $row) :
+                                $summary = Euforia_Puntos_Redemptions::public_summary($row);
+                                ?>
                                 <tr>
-                                    <td><?php echo esc_html($row['created_at']); ?></td>
-                                    <td><?php echo esc_html($row['reward_title'] ?: ('#' . $row['reward_id'])); ?></td>
-                                    <td class="ep-negative">-<?php echo esc_html((string) $row['points_spent']); ?></td>
-                                    <td><?php echo esc_html($row['status']); ?></td>
-                                    <td><?php echo esc_html($row['coupon_code'] ?: '—'); ?></td>
+                                    <td><?php echo esc_html($summary['created_at']); ?></td>
+                                    <td><?php echo esc_html($summary['reward_title'] ?: ('#' . $summary['reward_id'])); ?></td>
+                                    <td class="ep-negative">-<?php echo esc_html((string) $summary['points_spent']); ?></td>
+                                    <td><?php echo esc_html($summary['status_label']); ?></td>
+                                    <td><?php echo esc_html($summary['coupon_code'] ?: '—'); ?></td>
+                                    <td><?php echo esc_html($summary['expires_at'] ?: '—'); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
