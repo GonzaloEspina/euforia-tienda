@@ -386,6 +386,33 @@ function ScrollPanel({
   );
 }
 
+function CopyCouponButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* fallback silencioso */
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <span className="font-mono text-travel-ink">{code}</span>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        className="px-1.5 py-0.5 rounded border border-sky-200 text-[10px] font-semibold text-euforia-sky-dark hover:bg-sky-50"
+      >
+        {copied ? "Copiado" : "Copiar"}
+      </button>
+    </div>
+  );
+}
+
 function RedemptionRow({ item }: { item: WpRedemption }) {
   const [open, setOpen] = useState(false);
 
@@ -412,7 +439,12 @@ function RedemptionRow({ item }: { item: WpRedemption }) {
       {open ? (
         <div className="px-2.5 pb-2 pt-0 space-y-0.5 text-travel-ink-muted border-t border-sky-50">
           <p>-{item.points_spent} puntos</p>
-          {item.coupon_code ? <p>Cupón: {item.coupon_code}</p> : null}
+          {item.coupon_code ? (
+            <p className="flex flex-wrap items-center gap-1">
+              <span>Cupón:</span>
+              <CopyCouponButton code={item.coupon_code} />
+            </p>
+          ) : null}
           {item.expires_at ? (
             <p>Vence: {formatRedemptionDate(item.expires_at)}</p>
           ) : (
