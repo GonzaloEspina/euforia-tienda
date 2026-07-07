@@ -1,13 +1,11 @@
 /**
  * Cloudflare Worker recomendado para Euforia.
  *
- * IMPORTANTE: configurá DOS rutas en Cloudflare (no una sola catch-all):
- * 1) viajaconeuforia.com/tienda*  -> este worker
- * 2) viajaconeuforia.com/         -> este worker (solo home)
+ * IMPORTANTE: configurá UNA ruta en Cloudflare:
+ * - viajaconeuforia.com/tienda*  -> este worker
  *
- * NO proxear app.viajaconeuforia.com en la raíz: rompe assets y la página se cae.
- * Blog, nosotros, mi-cuenta, etc. quedan en WordPress sin worker.
- */
+ * La raíz (/) redirige a /tienda para que el catálogo funcione con basePath.
+ * Blog, nosotros, mi-cuenta de WordPress quedan fuera del worker. */
 
 const VERCEL_HOST = "euforia-tienda.vercel.app";
 const CANONICAL_HOST = "viajaconeuforia.com";
@@ -18,10 +16,17 @@ export default {
   async fetch(request) {
     const incoming = new URL(request.url);
     const isHome = incoming.pathname === "/" || incoming.pathname === "";
-    const upstreamPath = isHome
-      ? `/tienda${incoming.search}`
-      : incoming.pathname + incoming.search;
 
+    // La app Next usa basePath /tienda. En la raíz el catálogo puede no hidratar bien.
+    if (isHome) {
+      const target = new URL(`/tienda${incoming.search}`, incoming.origin);
+      return Response.redirect(target.toString(), 302);
+    }
+
+    if (!incoming.pathname.startsWith("/tienda")) {
+      return fetch(request);
+    }
+    const upstreamPath = incoming.pathname + incoming.search;
     const target = new URL(upstreamPath, `https://${VERCEL_HOST}`);
 
     const headers = new Headers(request.headers);

@@ -10,6 +10,9 @@ import {
 import { usePreferences } from "@/context/PreferencesContext";
 import { SalidaCard } from "./SalidaCard";
 import { HomeHero } from "./HomeHero";
+import { HomeTrustStrip } from "./HomeTrustStrip";
+import { HomePaymentStrip } from "./HomePaymentStrip";
+import { HomeTestimonials } from "./HomeTestimonials";
 import {
   CatalogFilters,
   filterSalidas,
@@ -136,8 +139,18 @@ export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
         search={search}
         onSearchChange={setSearch}
       />
+      <HomeTrustStrip />
+      <HomePaymentStrip />
 
       <div id="salidas" className="max-w-7xl mx-auto px-4 py-8 scroll-mt-24">
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-travel-ink">
+            Salidas grupales disponibles
+          </h2>
+          <p className="text-travel-ink-muted mt-2">
+            Elegí tu próximo destino y reservá con Euforia Viajes
+          </p>
+        </div>
       <div className="lg:grid lg:grid-cols-[280px_1fr] gap-8">
         <div className="hidden lg:block space-y-5">
           <CatalogFilters {...filtersProps} />
@@ -209,7 +222,11 @@ export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
         </div>
       </div>
 
-      <CotizacionBanner />
+      </div>
+
+      <HomeTestimonials />
+      <div className="max-w-7xl mx-auto px-4 pb-8">
+        <CotizacionBanner />
       </div>
     </>
   );

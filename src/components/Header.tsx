@@ -25,7 +25,7 @@ const NAV = [
 export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-euforia-sky-dark text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 min-h-[4.25rem] py-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <div className="max-w-7xl mx-auto px-4 min-h-[4.25rem] py-2 grid grid-cols-[auto_1fr_auto] items-center gap-3">
         <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
           <Image
             src={staticUrl("/logo.png")}
@@ -38,7 +38,7 @@ export function Header() {
           <span className="font-black tracking-wide text-lg sm:text-xl">EUFORIA</span>
         </Link>
 
-        <nav className="flex flex-wrap items-center justify-end gap-0.5 sm:gap-1 ml-auto">
+        <nav className="hidden xl:flex flex-wrap items-center justify-center gap-0.5">
           {NAV.map((item) =>
             item.external ? (
               <a
@@ -46,7 +46,7 @@ export function Header() {
                 href={item.href}
                 target={item.href.startsWith("http") ? "_blank" : undefined}
                 rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="px-2.5 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-white/95 hover:bg-white/10 transition-all"
+                className="px-2.5 py-2 rounded-lg text-sm font-medium text-white/95 hover:bg-white/10 transition-all"
               >
                 {item.label}
               </a>
@@ -54,12 +54,29 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-2.5 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-white/95 hover:bg-white/10 transition-all"
+                className="px-2.5 py-2 rounded-lg text-sm font-medium text-white/95 hover:bg-white/10 transition-all"
               >
                 {item.label}
               </Link>
             )
           )}
+        </nav>
+
+        <div className="flex flex-wrap items-center justify-end gap-0.5 sm:gap-1">
+          <nav className="flex xl:hidden flex-wrap items-center justify-end gap-0.5">
+            <Link
+              href="/#salidas"
+              className="px-2 py-2 rounded-lg text-xs font-medium text-white/95 hover:bg-white/10"
+            >
+              Salidas
+            </Link>
+            <Link
+              href="/cotizar/personalizada"
+              className="px-2 py-2 rounded-lg text-xs font-medium text-white/95 hover:bg-white/10"
+            >
+              Cotizar
+            </Link>
+          </nav>
           <GoogleAuthButton />
           <CheckoutCartButton />
           <a
@@ -73,7 +90,7 @@ export function Header() {
           <div className="hidden lg:block">
             <PriceModeToggle compact inverted />
           </div>
-        </nav>
+        </div>
       </div>
     </header>
   );
