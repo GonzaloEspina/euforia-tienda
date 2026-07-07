@@ -1,7 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { updateWpAccount, type WpSession } from "@/lib/wp-session";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  AR_PROVINCES,
+  getCitiesForProvince,
+  profileFromSession,
+} from "@/lib/argentina-locations";
+import { fetchWpSession, updateWpAccount, type WpSession } from "@/lib/wp-session";
 
 type Props = {
   session: WpSession;
@@ -9,23 +14,62 @@ type Props = {
 };
 
 export function AccountEditForm({ session, onUpdated }: Props) {
-  const billing = session.billing ?? {};
-  const [firstName, setFirstName] = useState(billing.first_name ?? "");
-  const [lastName, setLastName] = useState(billing.last_name ?? "");
-  const [phone, setPhone] = useState(billing.phone ?? "");
-  const [city, setCity] = useState(billing.city ?? "");
-  const [state, setState] = useState(billing.state ?? "");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [provinceCode, setProvinceCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const applyProfile = (data: WpSession) => {
+    const profile = profileFromSession(data);
+    setFirstName(profile.first_name);
+    setLastName(profile.last_name);
+    setPhone(profile.phone);
+    setCity(profile.city);
+    setProvinceCode(profile.state);
+  };
+
   useEffect(() => {
-    setFirstName(billing.first_name ?? "");
-    setLastName(billing.last_name ?? "");
-    setPhone(billing.phone ?? "");
-    setCity(billing.city ?? "");
-    setState(billing.state ?? "");
-  }, [session, billing]);
+    let cancelled = false;
+
+    async function loadProfile() {
+      setLoadingProfile(true);
+      try {
+        const fresh = await fetchWpSession();
+        if (!cancelled && fresh.logged_in) {
+          applyProfile(fresh);
+          onUpdated(fresh);
+        } else if (!cancelled) {
+          applyProfile(session);
+        }
+      } catch {
+        if (!cancelled) applyProfile(session);
+      } finally {
+        if (!cancelled) setLoadingProfile(false);
+      }
+    }
+
+    void loadProfile();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const cities = useMemo(
+    () => getCitiesForProvince(provinceCode, city),
+    [provinceCode, city]
+  );
+
+  const onProvinceChange = (code: string) => {
+    setProvinceCode(code);
+    const nextCities = getCitiesForProvince(code);
+    setCity(nextCities[0] ?? "");
+  };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -38,9 +82,11 @@ export function AccountEditForm({ session, onUpdated }: Props) {
         last_name: lastName,
         phone,
         city,
-        state,
+        state: provinceCode,
+        country: "AR",
       });
       onUpdated(updated);
+      applyProfile(updated);
       setSuccess("Datos actualizados correctamente.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron guardar los datos.");
@@ -48,6 +94,14 @@ export function AccountEditForm({ session, onUpdated }: Props) {
       setLoading(false);
     }
   };
+
+  if (loadingProfile) {
+    return (
+      <div className="glass rounded-xl p-4 max-w-lg text-sm text-travel-ink-muted">
+        Cargando tus datos...
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} className="glass rounded-xl p-4 space-y-3 max-w-lg">
@@ -88,21 +142,36 @@ export function AccountEditForm({ session, onUpdated }: Props) {
         </label>
         <label className="block space-y-1">
           <span className="text-xs font-medium">Provincia</span>
-          <input
-            type="text"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            className="w-full rounded-lg border border-sky-200 px-3 py-2 text-sm"
-          />
+          <select
+            value={provinceCode}
+            onChange={(e) => onProvinceChange(e.target.value)}
+            className="w-full rounded-lg border border-sky-200 px-3 py-2 text-sm bg-white"
+          >
+            <option value="">Seleccioná una provincia</option>
+            {AR_PROVINCES.map((province) => (
+              <option key={province.code} value={province.code}>
+                {province.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="block space-y-1">
           <span className="text-xs font-medium">Ciudad</span>
-          <input
-            type="text"
+          <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full rounded-lg border border-sky-200 px-3 py-2 text-sm"
-          />
+            disabled={!provinceCode}
+            className="w-full rounded-lg border border-sky-200 px-3 py-2 text-sm bg-white disabled:opacity-60"
+          >
+            <option value="">
+              {provinceCode ? "Seleccioná una ciudad" : "Elegí provincia primero"}
+            </option>
+            {cities.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

@@ -285,23 +285,44 @@ class Euforia_Puntos_REST_API {
     }
 
     private static function get_customer_billing(int $user_id): array {
-        if (!function_exists('wc_get_customer')) {
+        if (!function_exists('WC_Customer')) {
             return [];
         }
 
         $customer = new WC_Customer($user_id);
+        $user = get_userdata($user_id);
+
+        $first_name = $customer->get_billing_first_name()
+            ?: $customer->get_first_name()
+            ?: ($user ? $user->first_name : '');
+        $last_name = $customer->get_billing_last_name()
+            ?: $customer->get_last_name()
+            ?: ($user ? $user->last_name : '');
+
+        if ($first_name === '' && $last_name === '' && $user && $user->display_name) {
+            $parts = preg_split('/\s+/', trim($user->display_name), 2);
+            $first_name = $parts[0] ?? '';
+            $last_name = $parts[1] ?? '';
+        }
+
+        $phone = $customer->get_billing_phone()
+            ?: get_user_meta($user_id, 'billing_phone', true)
+            ?: get_user_meta($user_id, 'phone', true);
+
+        $city = $customer->get_billing_city() ?: $customer->get_shipping_city();
+        $state = $customer->get_billing_state() ?: $customer->get_shipping_state();
 
         return [
-            'first_name' => $customer->get_billing_first_name(),
-            'last_name' => $customer->get_billing_last_name(),
+            'first_name' => (string) $first_name,
+            'last_name' => (string) $last_name,
             'email' => $customer->get_email(),
-            'phone' => $customer->get_billing_phone(),
-            'address_1' => $customer->get_billing_address_1(),
-            'address_2' => $customer->get_billing_address_2(),
-            'city' => $customer->get_billing_city(),
-            'state' => $customer->get_billing_state(),
-            'postcode' => $customer->get_billing_postcode(),
-            'country' => $customer->get_billing_country(),
+            'phone' => (string) $phone,
+            'address_1' => $customer->get_billing_address_1() ?: $customer->get_shipping_address_1(),
+            'address_2' => $customer->get_billing_address_2() ?: $customer->get_shipping_address_2(),
+            'city' => (string) $city,
+            'state' => (string) $state,
+            'postcode' => $customer->get_billing_postcode() ?: $customer->get_shipping_postcode(),
+            'country' => $customer->get_billing_country() ?: $customer->get_shipping_country() ?: 'AR',
         ];
     }
 
@@ -374,12 +395,22 @@ class Euforia_Puntos_REST_API {
         }
         if ($state !== '') {
             $customer->set_billing_state($state);
+            $customer->set_shipping_state($state);
         }
         if ($postcode !== '') {
             $customer->set_billing_postcode($postcode);
         }
         if ($country !== '') {
             $customer->set_billing_country(strtoupper($country));
+        } else {
+            $customer->set_billing_country('AR');
+        }
+
+        if ($city !== '') {
+            $customer->set_shipping_city($city);
+        }
+        if ($phone !== '') {
+            $customer->set_shipping_phone($phone);
         }
 
         $customer->save();
