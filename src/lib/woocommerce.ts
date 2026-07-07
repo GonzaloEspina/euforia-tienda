@@ -412,24 +412,48 @@ async function fetchV3MetaMap(): Promise<Map<number, V3ProductMeta>> {
   const map = new Map<number, V3ProductMeta>();
   if (!authHeader()) return map;
 
-  let page = 1;
-  while (true) {
-    const batch = await wooFetch<
-      {
+  try {
+    let page = 1;
+    while (true) {
+      const response = await fetch(
+        `${getWooBaseUrl()}/wp-json/wc/v3/products?per_page=100&page=${page}&status=publish&_fields=id,featured,meta_data,stock_quantity`,
+        {
+          next: { revalidate: 300 },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: authHeader() as string,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // En build/deploy (Vercel) las credenciales pueden responder 401/403.
+        // El catálogo sigue funcionando con la Store API pública.
+        if (response.status === 401 || response.status === 403) {
+          console.warn(
+            `WooCommerce v3 meta skipped during catalog fetch: ${response.status}`
+          );
+          return map;
+        }
+        throw new Error(`WooCommerce v3 products: ${response.status}`);
+      }
+
+      const batch = (await response.json()) as {
         id: number;
         featured: boolean;
         meta_data: { key: string; value: string }[];
         stock_quantity: number | null;
-      }[]
-    >(
-      `/wp-json/wc/v3/products?per_page=100&page=${page}&status=publish&_fields=id,featured,meta_data,stock_quantity`
-    );
-    if (!batch.length) break;
-    for (const p of batch) {
-      map.set(p.id, p);
+      }[];
+
+      if (!batch.length) break;
+      for (const p of batch) {
+        map.set(p.id, p);
+      }
+      if (batch.length < 100) break;
+      page += 1;
     }
-    if (batch.length < 100) break;
-    page += 1;
+  } catch (error) {
+    console.warn("WooCommerce v3 meta unavailable, continuing without it:", error);
   }
 
   return map;
