@@ -11,6 +11,7 @@ import {
 import {
   buildCatalogUrlFilters,
   readCatalogUrlFilters,
+  type CatalogUrlFilters,
 } from "@/lib/home-catalog";
 import { usePreferences } from "@/context/PreferencesContext";
 import { SalidaCard } from "./SalidaCard";
@@ -36,37 +37,36 @@ export function StoreCatalogView({ initial: catalog }: { initial: CatalogData })
     [searchParams, catalog.categories]
   );
 
-  const [search, setSearch] = useState(urlFilters.search);
-  const [category, setCategory] = useState<string | null>(urlFilters.categorySlug);
+  const { search, categorySlug: category, onlyDestacado, onlyPromo } = urlFilters;
   const [tag, setTag] = useState<string | null>(null);
-  const [onlyDestacado, setOnlyDestacado] = useState(urlFilters.onlyDestacado);
-  const [onlyPromo, setOnlyPromo] = useState(urlFilters.onlyPromo);
   const [sort, setSort] = useState<CatalogSort>(DEFAULT_CATALOG_SORT);
   const [page, setPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    setSearch(urlFilters.search);
-    setCategory(urlFilters.categorySlug);
-    setOnlyDestacado(urlFilters.onlyDestacado);
-    setOnlyPromo(urlFilters.onlyPromo);
-  }, [urlFilters]);
+  const replaceFilters = useCallback(
+    (next: CatalogUrlFilters) => {
+      const params = buildCatalogUrlFilters(next);
+      const qs = params.toString();
+      const hash =
+        typeof window !== "undefined" && window.location.hash
+          ? window.location.hash
+          : "#salidas";
+      const nextUrl = qs ? `${pathname}?${qs}${hash}` : `${pathname}${hash}`;
+      router.replace(nextUrl, { scroll: false });
+    },
+    [pathname, router]
+  );
+
+  const patchFilters = useCallback(
+    (patch: Partial<CatalogUrlFilters>) => {
+      replaceFilters({ ...urlFilters, ...patch });
+    },
+    [replaceFilters, urlFilters]
+  );
 
   useEffect(() => {
-    const nextParams = buildCatalogUrlFilters({
-      search,
-      categorySlug: category,
-      onlyDestacado,
-      onlyPromo,
-    });
-    const nextQs = nextParams.toString();
-    const currentQs = searchParams.toString();
-    if (nextQs === currentQs) return;
-
-    const hash = typeof window !== "undefined" ? window.location.hash : "";
-    const nextUrl = nextQs ? `${pathname}?${nextQs}${hash}` : `${pathname}${hash}`;
-    router.replace(nextUrl, { scroll: false });
-  }, [search, category, onlyDestacado, onlyPromo, pathname, router, searchParams]);
+    setTag(null);
+  }, [searchParams]);
 
   useEffect(() => {
     if (window.location.hash !== "#salidas") return;
@@ -128,13 +128,14 @@ export function StoreCatalogView({ initial: catalog }: { initial: CatalogData })
 
   const filterHandlers = useMemo(
     () => ({
-      onSearchChange: setSearch,
-      onCategoryChange: setCategory,
+      onSearchChange: (value: string) => patchFilters({ search: value }),
+      onCategoryChange: (value: string | null) =>
+        patchFilters({ categorySlug: value }),
       onTagChange: setTag,
-      onDestacadoChange: setOnlyDestacado,
-      onPromoChange: setOnlyPromo,
+      onDestacadoChange: (value: boolean) => patchFilters({ onlyDestacado: value }),
+      onPromoChange: (value: boolean) => patchFilters({ onlyPromo: value }),
     }),
-    []
+    [patchFilters]
   );
 
   const activeFilters = useMemo(
@@ -149,27 +150,29 @@ export function StoreCatalogView({ initial: catalog }: { initial: CatalogData })
   );
 
   const clearAllFilters = useCallback(() => {
-    setSearch("");
-    setCategory(null);
     setTag(null);
-    setOnlyDestacado(false);
-    setOnlyPromo(false);
-  }, []);
+    replaceFilters({
+      search: "",
+      categorySlug: null,
+      onlyDestacado: false,
+      onlyPromo: false,
+    });
+  }, [replaceFilters]);
 
   const filtersProps = {
     salidas: catalog.salidas,
     categories: catalog.categories,
     tags: catalog.tags,
     search,
-    onSearchChange: setSearch,
+    onSearchChange: filterHandlers.onSearchChange,
     selectedCategory: category,
-    onCategoryChange: setCategory,
+    onCategoryChange: filterHandlers.onCategoryChange,
     selectedTag: tag,
     onTagChange: setTag,
     onlyDestacado,
-    onDestacadoChange: setOnlyDestacado,
+    onDestacadoChange: filterHandlers.onDestacadoChange,
     onlyPromo,
-    onPromoChange: setOnlyPromo,
+    onPromoChange: filterHandlers.onPromoChange,
   };
 
   return (

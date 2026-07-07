@@ -33,16 +33,13 @@ export function resolveCategorySlug(
 
 export function readCatalogUrlFilters(
   params: URLSearchParams,
-  categories: WooCategory[]
+  _categories: WooCategory[]
 ): CatalogUrlFilters {
   const catParam = params.get("cat");
-  const categorySlug = catParam
-    ? resolveCategorySlug(categories, catParam)
-    : null;
 
   return {
     search: params.get("q") ?? "",
-    categorySlug,
+    categorySlug: catParam,
     onlyDestacado: params.get("destacado") === "1",
     onlyPromo: params.get("promo") === "1",
   };
