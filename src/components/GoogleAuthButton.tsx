@@ -1,60 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { signIn, signOut, useSession } from "next-auth/react";
-
-const CANONICAL_TIENDA_URL = "https://viajaconeuforia.com/tienda";
+const WORDPRESS_ACCOUNT_URL = "https://viajaconeuforia.com/mi-cuenta/";
 
 export function GoogleAuthButton() {
-  const { data: session, status } = useSession();
-
-  if (status === "loading") {
-    return (
-      <span className="px-3 py-2 rounded-xl text-sm sm:text-base text-travel-ink-muted">
-        Cuenta...
-      </span>
-    );
-  }
-
-  if (session?.user) {
-    return (
-      <>
-        <Link
-          href="/mi-cuenta"
-          className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
-          title={session.user.email ?? "Mi cuenta"}
-        >
-          Mi cuenta
-        </Link>
-        <button
-          type="button"
-          onClick={() =>
-            signOut({
-              callbackUrl: `${CANONICAL_TIENDA_URL}/login`,
-            })
-          }
-          className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
-          title={session.user.email ?? "Cerrar sesión"}
-        >
-          Salir
-        </button>
-      </>
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() =>
-        signIn(
-          "google",
-          { callbackUrl: CANONICAL_TIENDA_URL },
-          { prompt: "select_account" }
-        )
-      }
-      className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
+    <Link
+      href={WORDPRESS_ACCOUNT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="px-2.5 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-white/95 hover:bg-white/10 transition-all"
     >
-      Ingresar
-    </button>
+      Mi cuenta
+    </Link>
   );
 }

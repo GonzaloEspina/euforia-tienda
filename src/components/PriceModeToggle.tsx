@@ -12,16 +12,22 @@ const MODES: { value: PriceCurrencyMode; label: string; short: string }[] = [
 export function PriceModeToggle({
   compact = false,
   fullWidth = false,
+  inverted = false,
 }: {
   compact?: boolean;
   fullWidth?: boolean;
+  inverted?: boolean;
 }) {
   const { priceMode, setPriceMode } = usePreferences();
 
   if (compact) {
     return (
       <div
-        className={`flex items-center rounded-xl bg-sky-50 border border-sky-200 p-0.5 shrink-0 ${fullWidth ? "w-full" : ""}`}
+        className={`flex items-center rounded-xl p-0.5 shrink-0 ${
+          inverted
+            ? "bg-white/15 border border-white/20"
+            : "bg-sky-50 border border-sky-200"
+        } ${fullWidth ? "w-full" : ""}`}
         role="group"
         aria-label="Moneda de precios"
       >
@@ -34,8 +40,12 @@ export function PriceModeToggle({
               fullWidth ? "flex-1 text-center" : ""
             } ${
               priceMode === m.value
-                ? "bg-euforia-sky-dark text-white shadow-sm"
-                : "text-travel-ink-muted hover:text-euforia-sky-dark"
+                ? inverted
+                  ? "bg-white text-euforia-sky-dark shadow-sm"
+                  : "bg-euforia-sky-dark text-white shadow-sm"
+                : inverted
+                  ? "text-white/85 hover:text-white"
+                  : "text-travel-ink-muted hover:text-euforia-sky-dark"
             }`}
             aria-pressed={priceMode === m.value}
           >

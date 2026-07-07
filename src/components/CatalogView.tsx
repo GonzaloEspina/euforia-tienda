@@ -9,6 +9,7 @@ import {
 } from "@/lib/catalog-sort";
 import { usePreferences } from "@/context/PreferencesContext";
 import { SalidaCard } from "./SalidaCard";
+import { HomeHero } from "./HomeHero";
 import {
   CatalogFilters,
   filterSalidas,
@@ -129,24 +130,14 @@ export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <section className="mb-10 text-center md:text-left">
-        <p className="text-euforia-sky-dark text-base font-semibold uppercase tracking-[0.2em] mb-2">
-          Viajar es sentir
-        </p>
-        <h1 className="text-3xl md:text-5xl font-bold text-balance mb-3 text-travel-ink">
-          Tu próximo destino{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-euforia-sky-dark to-euforia-sky">
-            te está esperando
-          </span>
-        </h1>
-        <p className="text-travel-ink-muted max-w-2xl text-lg">
-          Explorá salidas grupales, viajes nacionales e internacionales.
-          <br />
-          Reservá con la confianza de Euforia Viajes.
-        </p>
-      </section>
+    <>
+      <HomeHero
+        totalSalidas={catalog.salidas.length}
+        search={search}
+        onSearchChange={setSearch}
+      />
 
+      <div id="salidas" className="max-w-7xl mx-auto px-4 py-8 scroll-mt-24">
       <div className="lg:grid lg:grid-cols-[280px_1fr] gap-8">
         <div className="hidden lg:block space-y-5">
           <CatalogFilters {...filtersProps} />
@@ -219,6 +210,7 @@ export function CatalogView({ initial: catalog }: { initial: CatalogData }) {
       </div>
 
       <CotizacionBanner />
-    </div>
+      </div>
+    </>
   );
 }

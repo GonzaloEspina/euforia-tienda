@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { PromoBanner } from "@/components/PromoBanner";
 import { AppProviders } from "@/components/AppProviders";
 import { PwaManager } from "@/components/PwaManager";
 import { WooSessionBootstrap } from "@/components/WooSessionBootstrap";
@@ -16,7 +17,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   metadataBase: new URL("https://viajaconeuforia.com"),
   title: {
-    default: "Tienda Euforia Viajes",
+    default: "Euforia Viajes — Paquetes de Viaje",
     template: "%s | Euforia Viajes",
   },
   description:
@@ -60,8 +61,9 @@ export default function RootLayout({
     <html lang="es" className={outfit.variable}>
       <body className="font-sans">
         <AppProviders>
-            <div className="min-h-dvh flex flex-col bg-hero-gradient">
+            <div className="min-h-dvh flex flex-col bg-travel-bg">
               <Header />
+              <PromoBanner />
               <main className="flex-1">{children}</main>
               <footer className="border-t border-sky-200/80 py-10 mt-auto bg-travel-bg">
                 <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
@@ -75,12 +77,6 @@ export default function RootLayout({
                       Euforia Viajes — Leg. 16816
                     </span>
                   </p>
-                  <a
-                    href="https://viajaconeuforia.com"
-                    className="inline-block text-euforia-sky-dark font-medium hover:underline transition-colors"
-                  >
-                    Ir a viajaconeuforia.com
-                  </a>
                 </div>
               </footer>
             </div>

@@ -1,42 +1,18 @@
 "use client";
 
-import { signIn, useSession } from "next-auth/react";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-const CANONICAL_MY_ACCOUNT_URL = "https://viajaconeuforia.com/tienda/mi-cuenta";
+const WORDPRESS_ACCOUNT_URL = "https://viajaconeuforia.com/mi-cuenta/";
 
 export default function LoginPage() {
-  const { status } = useSession();
-  const router = useRouter();
-
   useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/");
-    }
-  }, [status, router]);
-
-  const handleGoogleLogin = () =>
-    signIn(
-      "google",
-      { callbackUrl: CANONICAL_MY_ACCOUNT_URL },
-      { prompt: "select_account" }
-    );
+    window.location.replace(WORDPRESS_ACCOUNT_URL);
+  }, []);
 
   return (
     <section className="max-w-md mx-auto px-4 py-20">
       <div className="glass rounded-2xl p-6 text-center space-y-4">
-        <h1 className="text-2xl font-bold text-travel-ink">Ingresar a tu cuenta</h1>
-        <p className="text-travel-ink-muted">
-          Accedé con Google para unificar sesión entre la web principal y la tienda.
-        </p>
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full py-3 rounded-xl bg-euforia-sky-dark text-white font-semibold hover:bg-euforia-sky transition-colors"
-        >
-          Continuar con Google
-        </button>
+        <h1 className="text-2xl font-bold text-travel-ink">Redirigiendo...</h1>
+        <p className="text-travel-ink-muted">Te estamos llevando a tu cuenta en la web principal.</p>
       </div>
     </section>
   );

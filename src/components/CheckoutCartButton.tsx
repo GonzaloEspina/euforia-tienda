@@ -31,7 +31,7 @@ export function CheckoutCartButton() {
   return (
     <a
       href={getCheckoutUrl()}
-      className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl text-euforia-sky-dark hover:bg-sky-50 hover:text-euforia-sky transition-all"
+      className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl text-white hover:bg-white/10 transition-all"
       aria-label="Finalizar compra"
       title="Finalizar compra"
     >
