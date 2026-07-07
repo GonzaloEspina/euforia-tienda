@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/api/auth/:path*",
+        destination: "/tienda/api/auth/:path*",
+        permanent: false,
+        basePath: false,
+      },
+    ];
+  },
 };
 
 export default withSerwist(nextConfig);
