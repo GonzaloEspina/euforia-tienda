@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { staticUrl } from "@/lib/config";
+import { salidasGrupalesHref } from "@/lib/home-catalog";
 import { PriceModeToggle } from "./PriceModeToggle";
 import { CheckoutCartButton } from "./CheckoutCartButton";
 import { GoogleAuthButton } from "./GoogleAuthButton";
@@ -14,7 +15,7 @@ const WHATSAPP_URL =
 
 const NAV = [
   { href: "/", label: "Inicio", external: false },
-  { href: "/#salidas", label: "Salidas Grupales", external: false },
+  { href: salidasGrupalesHref(), label: "Salidas Grupales", external: false },
   { href: "/cotizar/personalizada", label: "Armá tu Viaje", external: false },
   { href: `${SITE_URL}/blog`, label: "Blog", external: true },
   { href: `${SITE_URL}/nosotros`, label: "Nosotros", external: true },
@@ -65,7 +66,7 @@ export function Header() {
         <div className="flex flex-wrap items-center justify-end gap-0.5 sm:gap-1">
           <nav className="flex xl:hidden flex-wrap items-center justify-end gap-0.5">
             <Link
-              href="/#salidas"
+              href={salidasGrupalesHref()}
               className="px-2 py-2 rounded-lg text-xs font-medium text-white/95 hover:bg-white/10"
             >
               Salidas
