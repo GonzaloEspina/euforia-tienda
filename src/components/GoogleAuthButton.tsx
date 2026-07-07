@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 
+const CANONICAL_TIENDA_URL = "https://viajaconeuforia.com/tienda";
+
 export function GoogleAuthButton() {
   const { data: session, status } = useSession();
 
@@ -26,7 +28,7 @@ export function GoogleAuthButton() {
         </Link>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/tienda" })}
+          onClick={() => signOut({ callbackUrl: CANONICAL_TIENDA_URL })}
           className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
           title={session.user.email ?? "Cerrar sesión"}
         >
@@ -39,7 +41,7 @@ export function GoogleAuthButton() {
   return (
     <button
       type="button"
-      onClick={() => signIn("google", { callbackUrl: "/tienda" })}
+      onClick={() => signIn("google", { callbackUrl: CANONICAL_TIENDA_URL })}
       className="px-3 py-2 rounded-xl text-sm sm:text-base font-medium text-travel-ink hover:text-euforia-sky-dark hover:bg-sky-50 transition-all"
     >
       Ingresar

@@ -4,6 +4,8 @@ import { signIn, useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+const CANONICAL_MY_ACCOUNT_URL = "https://viajaconeuforia.com/tienda/mi-cuenta";
+
 export default function LoginPage() {
   const { status } = useSession();
   const router = useRouter();
@@ -23,7 +25,9 @@ export default function LoginPage() {
         </p>
         <button
           type="button"
-          onClick={() => signIn("google", { callbackUrl: "/tienda" })}
+          onClick={() =>
+            signIn("google", { callbackUrl: CANONICAL_MY_ACCOUNT_URL })
+          }
           className="w-full py-3 rounded-xl bg-euforia-sky-dark text-white font-semibold hover:bg-euforia-sky transition-colors"
         >
           Continuar con Google
