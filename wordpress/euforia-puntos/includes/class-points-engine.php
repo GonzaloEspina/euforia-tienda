@@ -238,9 +238,23 @@ class Euforia_Puntos_Points_Engine {
             'type' => 'adjust',
             'points' => $points,
             'balance_after' => $new_balance,
-            'note' => $note ?: __('Ajuste manual', 'euforia-puntos'),
+            'note' => self::format_adjust_note($note),
         ]);
 
         return ['success' => true, 'balance' => $new_balance];
+    }
+
+    private static function format_adjust_note(string $note): string {
+        $base = $note !== '' ? $note : __('Ajuste manual', 'euforia-puntos');
+        if (is_admin() && function_exists('get_current_user_id')) {
+            $admin_id = get_current_user_id();
+            if ($admin_id) {
+                $user = get_userdata($admin_id);
+                if ($user) {
+                    return sprintf('[Admin: %s] %s', $user->display_name, $base);
+                }
+            }
+        }
+        return $base;
     }
 }

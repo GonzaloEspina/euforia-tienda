@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Euforia Puntos
  * Description: Programa de puntos por compras WooCommerce. Canje de premios y descuentos vinculado por DNI.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: Gonzalo Espina
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EUFORIA_PUNTOS_VERSION', '1.0.4');
+define('EUFORIA_PUNTOS_VERSION', '1.0.5');
 define('EUFORIA_PUNTOS_PLUGIN_FILE', __FILE__);
 define('EUFORIA_PUNTOS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EUFORIA_PUNTOS_PLUGIN_URL', plugin_dir_url(__FILE__));

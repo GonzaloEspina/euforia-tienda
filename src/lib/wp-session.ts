@@ -7,6 +7,18 @@ export type WpSession = {
   email?: string;
   dni?: string | null;
   logout_url?: string;
+  billing?: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone?: string;
+    address_1?: string;
+    address_2?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  };
 };
 
 export function getWpPuntosApiBase(): string {

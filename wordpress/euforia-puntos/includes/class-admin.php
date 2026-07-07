@@ -41,11 +41,11 @@ class Euforia_Puntos_Admin {
 
         add_submenu_page(
             'euforia-puntos',
-            __('Ajuste manual', 'euforia-puntos'),
-            __('Ajuste manual', 'euforia-puntos'),
+            __('Gestión de puntos', 'euforia-puntos'),
+            __('Gestión de puntos', 'euforia-puntos'),
             'manage_woocommerce',
-            'euforia-puntos-adjust',
-            [__CLASS__, 'render_adjust_page']
+            'euforia-puntos-manage',
+            [__CLASS__, 'render_points_manage_page']
         );
     }
 
@@ -116,23 +116,44 @@ class Euforia_Puntos_Admin {
         include EUFORIA_PUNTOS_PLUGIN_DIR . 'templates/admin-rewards.php';
     }
 
-    public static function render_adjust_page(): void {
+    public static function render_points_manage_page(): void {
         if (!current_user_can('manage_woocommerce')) {
             return;
         }
 
         $message = '';
+        $message_type = 'success';
+
         if (isset($_POST['euforia_puntos_adjust_nonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['euforia_puntos_adjust_nonce'])), 'euforia_puntos_adjust')) {
             $dni = Euforia_Puntos_DNI::normalize(sanitize_text_field(wp_unslash($_POST['dni'] ?? '')));
             $points = (int) ($_POST['points'] ?? 0);
             $note = sanitize_text_field(wp_unslash($_POST['note'] ?? ''));
             $result = Euforia_Puntos_Points_Engine::manual_adjustment($dni ?? '', $points, $note);
-            $message = $result['success']
-                ? sprintf(__('Saldo actualizado: %d puntos', 'euforia-puntos'), $result['balance'])
-                : __('No se pudo ajustar.', 'euforia-puntos');
+
+            if ($result['success']) {
+                $message = sprintf(
+                    __('Saldo actualizado: %d puntos para DNI %s', 'euforia-puntos'),
+                    $result['balance'],
+                    $dni
+                );
+            } else {
+                $message_type = 'error';
+                $errors = [
+                    'invalid_dni' => __('DNI inválido.', 'euforia-puntos'),
+                    'zero_points' => __('Ingresá un valor distinto de cero.', 'euforia-puntos'),
+                    'negative_balance' => __('El saldo no puede quedar negativo.', 'euforia-puntos'),
+                ];
+                $message = $errors[$result['message'] ?? ''] ?? __('No se pudo ajustar.', 'euforia-puntos');
+            }
         }
 
-        include EUFORIA_PUNTOS_PLUGIN_DIR . 'templates/admin-adjust.php';
+        include EUFORIA_PUNTOS_PLUGIN_DIR . 'templates/admin-points-manage.php';
+    }
+
+    /** @deprecated Use render_points_manage_page */
+    public static function render_adjust_page(): void {
+        wp_safe_redirect(admin_url('admin.php?page=euforia-puntos-manage&tab=adjust'));
+        exit;
     }
 
     private static function handle_reward_save(): void {

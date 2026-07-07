@@ -116,4 +116,131 @@ class Euforia_Puntos_Database {
         );
         return $count > 0;
     }
+
+    /**
+     * @param array{type?:string,dni?:string,search?:string,page?:int,per_page?:int} $args
+     */
+    public static function query_ledger(array $args = []): array {
+        global $wpdb;
+        $table = self::ledger_table();
+        $where = ['1=1'];
+        $params = [];
+
+        if (!empty($args['type'])) {
+            $where[] = 'type = %s';
+            $params[] = sanitize_key($args['type']);
+        }
+
+        if (!empty($args['dni'])) {
+            $dni = Euforia_Puntos_DNI::normalize((string) $args['dni']);
+            if ($dni) {
+                $where[] = 'dni = %s';
+                $params[] = $dni;
+            }
+        }
+
+        if (!empty($args['search'])) {
+            $like = '%' . $wpdb->esc_like((string) $args['search']) . '%';
+            $where[] = '(dni LIKE %s OR note LIKE %s)';
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        $page = max(1, (int) ($args['page'] ?? 1));
+        $per_page = min(100, max(10, (int) ($args['per_page'] ?? 25)));
+        $offset = ($page - 1) * $per_page;
+
+        $sql = 'SELECT * FROM ' . $table . ' WHERE ' . implode(' AND ', $where)
+            . ' ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d';
+        $params[] = $per_page;
+        $params[] = $offset;
+
+        if ($params) {
+            return $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A) ?: [];
+        }
+
+        return $wpdb->get_results($sql, ARRAY_A) ?: [];
+    }
+
+    /**
+     * @param array{type?:string,dni?:string,search?:string} $args
+     */
+    public static function count_ledger(array $args = []): int {
+        global $wpdb;
+        $table = self::ledger_table();
+        $where = ['1=1'];
+        $params = [];
+
+        if (!empty($args['type'])) {
+            $where[] = 'type = %s';
+            $params[] = sanitize_key($args['type']);
+        }
+
+        if (!empty($args['dni'])) {
+            $dni = Euforia_Puntos_DNI::normalize((string) $args['dni']);
+            if ($dni) {
+                $where[] = 'dni = %s';
+                $params[] = $dni;
+            }
+        }
+
+        if (!empty($args['search'])) {
+            $like = '%' . $wpdb->esc_like((string) $args['search']) . '%';
+            $where[] = '(dni LIKE %s OR note LIKE %s)';
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM ' . $table . ' WHERE ' . implode(' AND ', $where);
+        if ($params) {
+            return (int) $wpdb->get_var($wpdb->prepare($sql, ...$params));
+        }
+
+        return (int) $wpdb->get_var($sql);
+    }
+
+    public static function get_redemptions(string $dni, int $limit = 50): array {
+        global $wpdb;
+        $redemptions = self::redemptions_table();
+        $rewards = self::rewards_table();
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT r.*, rw.title AS reward_title
+                FROM ' . $redemptions . ' r
+                LEFT JOIN ' . $rewards . ' rw ON rw.id = r.reward_id
+                WHERE r.dni = %s
+                ORDER BY r.created_at DESC, r.id DESC
+                LIMIT %d',
+                $dni,
+                $limit
+            ),
+            ARRAY_A
+        ) ?: [];
+    }
+
+    public static function get_passenger_profile(string $dni): ?array {
+        $account = self::get_account($dni);
+        if (!$account) {
+            return null;
+        }
+
+        $profile = [
+            'dni' => $dni,
+            'balance' => (int) $account['balance'],
+            'user_id' => $account['user_id'] ? (int) $account['user_id'] : null,
+            'name' => null,
+            'email' => null,
+        ];
+
+        if ($profile['user_id']) {
+            $user = get_userdata($profile['user_id']);
+            if ($user) {
+                $profile['name'] = $user->display_name;
+                $profile['email'] = $user->user_email;
+            }
+        }
+
+        return $profile;
+    }
 }

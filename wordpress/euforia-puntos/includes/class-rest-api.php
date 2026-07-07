@@ -74,6 +74,28 @@ class Euforia_Puntos_REST_API {
                 ],
             ],
         ]);
+
+        register_rest_route('euforia-puntos/v1', '/orders', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'get_orders'],
+            'permission_callback' => [__CLASS__, 'require_logged_in'],
+            'args' => [
+                'page' => [
+                    'required' => false,
+                    'type' => 'integer',
+                    'default' => 1,
+                ],
+                'per_page' => [
+                    'required' => false,
+                    'type' => 'integer',
+                    'default' => 20,
+                ],
+            ],
+        ]);
+    }
+
+    public static function require_logged_in(): bool {
+        return self::resolve_current_user_id() > 0;
     }
 
     public static function can_redeem(WP_REST_Request $request): bool {
@@ -156,13 +178,116 @@ class Euforia_Puntos_REST_API {
             $return_to = home_url('/tienda/mi-cuenta');
         }
 
+        $billing = self::get_customer_billing($user_id);
+
         return new WP_REST_Response([
             'logged_in' => true,
             'name' => $user->display_name,
             'email' => $user->user_email,
             'dni' => $dni,
             'logout_url' => wp_logout_url($return_to),
+            'billing' => $billing,
         ]);
+    }
+
+    public static function get_orders(WP_REST_Request $request): WP_REST_Response {
+        $user_id = self::resolve_current_user_id();
+        if (!$user_id) {
+            return new WP_REST_Response(['message' => __('No autenticado.', 'euforia-puntos')], 401);
+        }
+
+        $page = max(1, (int) $request->get_param('page'));
+        $per_page = min(50, max(1, (int) $request->get_param('per_page')));
+
+        $result = wc_get_orders([
+            'customer_id' => $user_id,
+            'limit' => $per_page,
+            'page' => $page,
+            'paginate' => true,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ]);
+
+        $orders = [];
+        foreach ($result->orders as $order) {
+            if (!$order instanceof WC_Order) {
+                continue;
+            }
+            $orders[] = self::format_order($order);
+        }
+
+        return new WP_REST_Response([
+            'orders' => $orders,
+            'total' => (int) $result->total,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total_pages' => (int) $result->max_num_pages,
+        ]);
+    }
+
+    private static function format_order(WC_Order $order): array {
+        $items = [];
+        foreach ($order->get_items() as $item) {
+            if (!$item instanceof WC_Order_Item_Product) {
+                continue;
+            }
+            $product = $item->get_product();
+            $items[] = [
+                'name' => $item->get_name(),
+                'quantity' => $item->get_quantity(),
+                'total' => wc_format_decimal($item->get_total(), 2),
+                'image' => $product ? wp_get_attachment_image_url($product->get_image_id(), 'thumbnail') : null,
+            ];
+        }
+
+        $date = $order->get_date_created();
+
+        return [
+            'id' => $order->get_id(),
+            'number' => $order->get_order_number(),
+            'status' => $order->get_status(),
+            'status_label' => wc_get_order_status_name($order->get_status()),
+            'date' => $date ? $date->date('c') : null,
+            'total' => wc_format_decimal($order->get_total(), 2),
+            'currency' => $order->get_currency(),
+            'currency_symbol' => get_woocommerce_currency_symbol($order->get_currency()),
+            'item_count' => $order->get_item_count(),
+            'items' => $items,
+            'payment_method' => $order->get_payment_method_title(),
+            'billing' => [
+                'first_name' => $order->get_billing_first_name(),
+                'last_name' => $order->get_billing_last_name(),
+                'email' => $order->get_billing_email(),
+                'phone' => $order->get_billing_phone(),
+                'address_1' => $order->get_billing_address_1(),
+                'address_2' => $order->get_billing_address_2(),
+                'city' => $order->get_billing_city(),
+                'state' => $order->get_billing_state(),
+                'postcode' => $order->get_billing_postcode(),
+                'country' => $order->get_billing_country(),
+            ],
+        ];
+    }
+
+    private static function get_customer_billing(int $user_id): array {
+        if (!function_exists('wc_get_customer')) {
+            return [];
+        }
+
+        $customer = new WC_Customer($user_id);
+
+        return [
+            'first_name' => $customer->get_billing_first_name(),
+            'last_name' => $customer->get_billing_last_name(),
+            'email' => $customer->get_email(),
+            'phone' => $customer->get_billing_phone(),
+            'address_1' => $customer->get_billing_address_1(),
+            'address_2' => $customer->get_billing_address_2(),
+            'city' => $customer->get_billing_city(),
+            'state' => $customer->get_billing_state(),
+            'postcode' => $customer->get_billing_postcode(),
+            'country' => $customer->get_billing_country(),
+        ];
     }
 
     public static function login(WP_REST_Request $request): WP_REST_Response {

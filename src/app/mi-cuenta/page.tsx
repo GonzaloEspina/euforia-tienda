@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ACCOUNT_PAGE_URL } from "@/lib/config";
 import { fetchWpSession, getWpPuntosApiBase } from "@/lib/wp-session";
 import { WpLoginForm } from "@/components/WpLoginForm";
+import { UserOrdersList } from "@/components/UserOrdersList";
 
 type Reward = {
   id: number;
@@ -21,6 +21,8 @@ type HistoryEntry = {
   points: number;
 };
 
+type AccountTab = "orders" | "points";
+
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   const data = await res.json();
@@ -36,11 +38,35 @@ function normalizeDni(value: string): string | null {
   return digits.replace(/^0+/, "") || "0";
 }
 
+function BillingCard({ session }: { session: NonNullable<Awaited<ReturnType<typeof fetchWpSession>>> }) {
+  const billing = session.billing;
+  if (!billing?.address_1 && !billing?.phone) return null;
+
+  return (
+    <div className="glass rounded-2xl p-5 text-sm space-y-1">
+      <h3 className="font-semibold text-travel-ink mb-2">Tus datos</h3>
+      <p>
+        {[billing.first_name, billing.last_name].filter(Boolean).join(" ") || session.name}
+      </p>
+      {billing.email || session.email ? <p>{billing.email ?? session.email}</p> : null}
+      {billing.phone ? <p>Tel: {billing.phone}</p> : null}
+      {billing.address_1 ? (
+        <p>
+          {billing.address_1}
+          {billing.city ? `, ${billing.city}` : ""}
+          {billing.postcode ? ` (${billing.postcode})` : ""}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export default function MiCuentaPage() {
   const [session, setSession] = useState<Awaited<ReturnType<typeof fetchWpSession>> | null>(
     null
   );
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<AccountTab>("orders");
   const [dniInput, setDniInput] = useState("");
   const [dni, setDni] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
@@ -157,54 +183,149 @@ export default function MiCuentaPage() {
       <div className="text-center sm:text-left">
         <h1 className="text-2xl sm:text-3xl font-bold text-travel-ink">Mi cuenta</h1>
         <p className="text-travel-ink-muted mt-1">
-          Gestioná tu sesión, consultá puntos y canjeá beneficios.
+          Gestioná tu sesión, pedidos, puntos y canjes desde un solo lugar.
         </p>
       </div>
 
       {session?.logged_in ? (
-        <div className="glass rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-sm text-travel-ink-muted">Sesión activa</p>
-            <p className="font-semibold text-travel-ink">
-              {session.name ?? "Viajero"} · {session.email}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <a
-              href={ACCOUNT_PAGE_URL}
-              className="px-4 py-2 rounded-xl border border-sky-200 text-sm font-semibold text-euforia-sky-dark hover:bg-sky-50"
-            >
-              Pedidos y datos
-            </a>
-            {session.logout_url ? (
-              <a
-                href={session.logout_url}
-                className="px-4 py-2 rounded-xl border border-sky-200 text-sm font-semibold text-travel-ink-muted hover:bg-sky-50"
+        <>
+          <div className="glass rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-sm text-travel-ink-muted">Sesión activa</p>
+              <p className="font-semibold text-travel-ink">
+                {session.name ?? "Viajero"} · {session.email}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {session.logout_url ? (
+                <a
+                  href={session.logout_url}
+                  className="px-4 py-2 rounded-xl border border-sky-200 text-sm font-semibold text-travel-ink-muted hover:bg-sky-50"
+                >
+                  Salir
+                </a>
+              ) : null}
+              <Link
+                href="/"
+                className="px-4 py-2 rounded-xl bg-euforia-sky-dark text-white text-sm font-semibold hover:bg-euforia-sky"
               >
-                Salir
-              </a>
-            ) : null}
-            <Link
-              href="/"
-              className="px-4 py-2 rounded-xl bg-euforia-sky-dark text-white text-sm font-semibold hover:bg-euforia-sky"
-            >
-              Ver salidas
-            </Link>
+                Ver salidas
+              </Link>
+            </div>
           </div>
-        </div>
+
+          <BillingCard session={session} />
+
+          <div className="flex gap-2 border-b border-sky-100">
+            <button
+              type="button"
+              onClick={() => setActiveTab("orders")}
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                activeTab === "orders"
+                  ? "border-euforia-sky-dark text-euforia-sky-dark"
+                  : "border-transparent text-travel-ink-muted hover:text-travel-ink"
+              }`}
+            >
+              Mis pedidos
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("points")}
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                activeTab === "points"
+                  ? "border-euforia-sky-dark text-euforia-sky-dark"
+                  : "border-transparent text-travel-ink-muted hover:text-travel-ink"
+              }`}
+            >
+              Mis puntos
+            </button>
+          </div>
+
+          {activeTab === "orders" ? (
+            <UserOrdersList />
+          ) : (
+            <PointsSection
+              dniInput={dniInput}
+              setDniInput={setDniInput}
+              onSubmit={onSubmit}
+              loading={loading}
+              dni={dni}
+              balance={balance}
+              rewards={rewards}
+              history={history}
+              session={session}
+              redeem={redeem}
+            />
+          )}
+        </>
       ) : (
-        <WpLoginForm
-          onSuccess={async (data) => {
-            setSession(data);
-            setError(null);
-            if (data.dni) {
-              setDniInput(data.dni);
-              await loadData(data.dni);
-            }
-          }}
-        />
+        <>
+          <WpLoginForm
+            onSuccess={async (data) => {
+              setSession(data);
+              setError(null);
+              if (data.dni) {
+                setDniInput(data.dni);
+                await loadData(data.dni);
+              }
+            }}
+          />
+          <PointsSection
+            dniInput={dniInput}
+            setDniInput={setDniInput}
+            onSubmit={onSubmit}
+            loading={loading}
+            dni={dni}
+            balance={balance}
+            rewards={rewards}
+            history={history}
+            session={session}
+            redeem={redeem}
+          />
+        </>
       )}
 
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+          {success}
+        </div>
+      )}
+    </section>
+  );
+}
+
+type PointsSectionProps = {
+  dniInput: string;
+  setDniInput: (value: string) => void;
+  onSubmit: (e: FormEvent) => void;
+  loading: boolean;
+  dni: string | null;
+  balance: number | null;
+  rewards: Reward[];
+  history: HistoryEntry[];
+  session: Awaited<ReturnType<typeof fetchWpSession>> | null;
+  redeem: (rewardId: number) => void;
+};
+
+function PointsSection({
+  dniInput,
+  setDniInput,
+  onSubmit,
+  loading,
+  dni,
+  balance,
+  rewards,
+  history,
+  session,
+  redeem,
+}: PointsSectionProps) {
+  return (
+    <div className="space-y-6">
       <form onSubmit={onSubmit} className="glass rounded-2xl p-5 space-y-3">
         <h2 className="text-lg font-semibold">Mis puntos Euforia</h2>
         <p className="text-sm text-travel-ink-muted">
@@ -228,17 +349,6 @@ export default function MiCuentaPage() {
           </button>
         </div>
       </form>
-
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
-          {success}
-        </div>
-      )}
 
       {dni && balance !== null && (
         <>
@@ -313,6 +423,6 @@ export default function MiCuentaPage() {
           </div>
         </>
       )}
-    </section>
+    </div>
   );
 }
