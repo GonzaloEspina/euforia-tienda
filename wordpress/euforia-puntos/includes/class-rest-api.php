@@ -43,6 +43,12 @@ class Euforia_Puntos_REST_API {
                 'dni' => ['required' => true, 'sanitize_callback' => 'sanitize_text_field'],
             ],
         ]);
+
+        register_rest_route('euforia-puntos/v1', '/me', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'get_me'],
+            'permission_callback' => '__return_true',
+        ]);
     }
 
     public static function can_redeem(WP_REST_Request $request): bool {
@@ -106,5 +112,22 @@ class Euforia_Puntos_REST_API {
 
         $entries = Euforia_Puntos_Database::get_ledger($dni, 30);
         return new WP_REST_Response(['history' => $entries]);
+    }
+
+    public static function get_me(WP_REST_Request $request): WP_REST_Response {
+        unset($request);
+        if (!is_user_logged_in()) {
+            return new WP_REST_Response(['logged_in' => false], 401);
+        }
+
+        $user = wp_get_current_user();
+        $dni = Euforia_Puntos_DNI::from_user($user->ID);
+
+        return new WP_REST_Response([
+            'logged_in' => true,
+            'name' => $user->display_name,
+            'email' => $user->user_email,
+            'dni' => $dni,
+        ]);
     }
 }

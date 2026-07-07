@@ -7,6 +7,16 @@ const SITE_ORIGIN =
 /** Página de cuenta en WordPress (login/registro). */
 export const ACCOUNT_PAGE_URL = `${SITE_ORIGIN}/mi-cuenta/`;
 
+export function getTiendaAccountUrl(): string {
+  return `${SITE_ORIGIN}${BASE_PATH}/mi-cuenta`;
+}
+
+/** Login en WordPress con retorno a la tienda. */
+export function getWpAccountLoginUrl(): string {
+  const returnTo = getTiendaAccountUrl();
+  return `${ACCOUNT_PAGE_URL}?redirect_to=${encodeURIComponent(returnTo)}`;
+}
+
 /** Slug de la página de checkout en WooCommerce (español: finalizar-compra). */
 export const WOO_CHECKOUT_PATH =
   process.env.NEXT_PUBLIC_WOO_CHECKOUT_PATH ?? "/finalizar-compra";
