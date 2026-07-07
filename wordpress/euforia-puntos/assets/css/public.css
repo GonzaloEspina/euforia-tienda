@@ -1,0 +1,295 @@
+.euforia-puntos-app {
+  --ep-sky: #2a9fd4;
+  --ep-sky-dark: #1e7fb0;
+  --ep-ink: #1a2b3c;
+  --ep-muted: #64748b;
+  --ep-bg: #f0f9ff;
+  --ep-border: #bae6fd;
+  max-width: 960px;
+  margin: 0 auto;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ep-ink);
+}
+
+.euforia-puntos-app .ep-header {
+  margin-bottom: 1.25rem;
+}
+
+.euforia-puntos-app .ep-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.75rem;
+}
+
+.euforia-puntos-app .ep-subtitle {
+  margin: 0;
+  color: var(--ep-muted);
+}
+
+.euforia-puntos-app .ep-lookup label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.euforia-puntos-app .ep-lookup-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.euforia-puntos-app .ep-lookup-row input {
+  flex: 1;
+  border: 1px solid var(--ep-border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+.euforia-puntos-app .ep-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.euforia-puntos-app .ep-btn-primary {
+  background: var(--ep-sky-dark);
+  color: #fff;
+}
+
+.euforia-puntos-app .ep-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.euforia-puntos-app .ep-btn-secondary {
+  background: #fff;
+  color: var(--ep-sky-dark);
+  border: 1px solid var(--ep-border);
+}
+
+.euforia-puntos-app .ep-hidden {
+  display: none !important;
+}
+
+.euforia-puntos-app .ep-alert {
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.euforia-puntos-app .ep-alert.is-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.euforia-puntos-app .ep-balance-card {
+  background: linear-gradient(135deg, var(--ep-sky-dark), var(--ep-sky));
+  color: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 1.25rem 0;
+}
+
+.euforia-puntos-app .ep-balance-label {
+  display: block;
+  opacity: 0.9;
+}
+
+.euforia-puntos-app .ep-balance-value {
+  display: block;
+  font-size: 2.5rem;
+  line-height: 1.1;
+  margin: 0.25rem 0;
+}
+
+.euforia-puntos-app .ep-balance-dni {
+  opacity: 0.85;
+  font-size: 0.95rem;
+}
+
+.euforia-puntos-app .ep-section h3 {
+  margin: 0 0 0.75rem;
+}
+
+.euforia-puntos-app .ep-rewards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.euforia-puntos-app .ep-reward-card {
+  border: 1px solid var(--ep-border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(30, 127, 176, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.euforia-puntos-app .ep-reward-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(30, 127, 176, 0.14);
+}
+
+.euforia-puntos-app .ep-reward-card.is-disabled {
+  opacity: 0.72;
+}
+
+.euforia-puntos-app .ep-reward-visual {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(145deg, #e0f2fe, #f0f9ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.euforia-puntos-app .ep-reward-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.euforia-puntos-app .ep-reward-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.35rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.euforia-puntos-app .ep-reward-icon.is-percent {
+  background: linear-gradient(135deg, #1e7fb0, #3db8e8);
+}
+
+.euforia-puntos-app .ep-reward-icon.is-fixed {
+  background: linear-gradient(135deg, #047857, #34d399);
+  font-size: 1rem;
+  padding: 0 0.5rem;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.euforia-puntos-app .ep-reward-icon.is-merch {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  font-size: 2rem;
+}
+
+.euforia-puntos-app .ep-reward-icon.is-gift {
+  background: linear-gradient(135deg, #ea580c, #fb923c);
+  font-size: 2rem;
+}
+
+.euforia-puntos-app .ep-reward-body {
+  padding: 1rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.5rem;
+}
+
+.euforia-puntos-app .ep-reward-card h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.euforia-puntos-app .ep-reward-benefit {
+  display: inline-block;
+  width: fit-content;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ep-sky-dark);
+  background: #e0f2fe;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+}
+
+.euforia-puntos-app .ep-reward-meta {
+  color: var(--ep-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  flex: 1;
+}
+
+.euforia-puntos-app .ep-reward-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.euforia-puntos-app .ep-points-badge {
+  font-weight: 800;
+  color: var(--ep-sky-dark);
+  font-size: 0.95rem;
+}
+
+.euforia-puntos-app .ep-btn-secondary {
+  white-space: nowrap;
+}
+
+.euforia-puntos-app .ep-reward-icon.ep-icon-stack {
+  width: 104px;
+  height: 104px;
+  border-radius: 28px;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 1rem;
+}
+
+.euforia-puntos-app .ep-reward-icon.ep-icon-stack svg {
+  opacity: 0.95;
+}
+
+.euforia-puntos-app .ep-reward-icon.ep-icon-stack span {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.euforia-puntos-app .ep-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.euforia-puntos-app .ep-history li {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.65rem 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.euforia-puntos-app .ep-history .ep-points-positive {
+  color: #047857;
+  font-weight: 700;
+}
+
+.euforia-puntos-app .ep-history .ep-points-negative {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .euforia-puntos-app .ep-lookup-row {
+    flex-direction: column;
+  }
+}

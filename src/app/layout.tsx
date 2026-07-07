@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
-import { PreferencesProvider } from "@/context/PreferencesContext";
-import { CartProvider } from "@/context/CartContext";
-import { WhatsAppProvider } from "@/context/WhatsAppContext";
+import { AppProviders } from "@/components/AppProviders";
 import { PwaManager } from "@/components/PwaManager";
 import { WooSessionBootstrap } from "@/components/WooSessionBootstrap";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
@@ -61,9 +59,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={outfit.variable}>
       <body className="font-sans">
-        <PreferencesProvider>
-          <CartProvider>
-            <WhatsAppProvider>
+        <AppProviders>
             <div className="min-h-dvh flex flex-col bg-hero-gradient">
               <Header />
               <main className="flex-1">{children}</main>
@@ -91,9 +87,7 @@ export default function RootLayout({
             <WhatsAppFloat />
             <PwaManager />
             <WooSessionBootstrap />
-            </WhatsAppProvider>
-          </CartProvider>
-        </PreferencesProvider>
+        </AppProviders>
       </body>
     </html>
   );
