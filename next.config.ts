@@ -30,6 +30,19 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [
+          {
+            type: "header",
+            key: "host",
+            value: "euforia-tienda\\.vercel\\.app",
+          },
+        ],
+        destination: "https://viajaconeuforia.com/:path*",
+        permanent: false,
+        basePath: false,
+      },
+      {
         source: "/api/auth/:path*",
         destination: "/tienda/api/auth/:path*",
         permanent: false,
