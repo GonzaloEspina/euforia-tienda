@@ -38,9 +38,35 @@ export function PwaManager() {
   }, []);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register(`${BASE_PATH}/sw.js`).catch(() => {});
-    }
+    if (!("serviceWorker" in navigator)) return;
+
+    const onControllerChange = () => {
+      setShowUpdate(true);
+    };
+
+    navigator.serviceWorker.register(`${BASE_PATH}/sw.js`).then((registration) => {
+      registration.addEventListener("updatefound", () => {
+        const installing = registration.installing;
+        if (!installing) return;
+
+        installing.addEventListener("statechange", () => {
+          if (
+            installing.state === "activated" &&
+            navigator.serviceWorker.controller
+          ) {
+            setShowUpdate(true);
+          }
+        });
+      });
+    }).catch(() => {});
+
+    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+    return () => {
+      navigator.serviceWorker.removeEventListener(
+        "controllerchange",
+        onControllerChange
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -125,9 +151,9 @@ export function PwaManager() {
           <div className="glass rounded-2xl p-4 border border-euforia-sky/30 flex items-center gap-3">
             <span className="text-xl">🔄</span>
             <div className="flex-1">
-              <p className="text-base font-semibold">Nuevo catálogo disponible</p>
+              <p className="text-base font-semibold">Nueva versión disponible</p>
               <p className="text-sm text-euforia-muted">
-                Hay salidas actualizadas. Actualizá para ver lo último.
+                Hay cambios en la tienda. Actualizá para ver la home y el catálogo al día.
               </p>
             </div>
             <button
