@@ -48,6 +48,12 @@ class Euforia_Puntos_REST_API {
             'methods' => 'GET',
             'callback' => [__CLASS__, 'get_me'],
             'permission_callback' => '__return_true',
+            'args' => [
+                'return_to' => [
+                    'required' => false,
+                    'sanitize_callback' => 'esc_url_raw',
+                ],
+            ],
         ]);
     }
 
@@ -116,18 +122,43 @@ class Euforia_Puntos_REST_API {
 
     public static function get_me(WP_REST_Request $request): WP_REST_Response {
         unset($request);
-        if (!is_user_logged_in()) {
+
+        $user_id = self::resolve_current_user_id();
+        if (!$user_id) {
             return new WP_REST_Response(['logged_in' => false], 401);
         }
 
-        $user = wp_get_current_user();
-        $dni = Euforia_Puntos_DNI::from_user($user->ID);
+        $user = get_userdata($user_id);
+        if (!$user) {
+            return new WP_REST_Response(['logged_in' => false], 401);
+        }
+
+        $dni = Euforia_Puntos_DNI::from_user($user_id);
+        $return_to = $request->get_param('return_to');
+        if (!$return_to) {
+            $return_to = home_url('/tienda/mi-cuenta');
+        }
 
         return new WP_REST_Response([
             'logged_in' => true,
             'name' => $user->display_name,
             'email' => $user->user_email,
             'dni' => $dni,
+            'logout_url' => wp_logout_url($return_to),
         ]);
+    }
+
+    private static function resolve_current_user_id(): int {
+        if (is_user_logged_in()) {
+            return (int) get_current_user_id();
+        }
+
+        $validated = wp_validate_auth_cookie('', 'logged_in');
+        if ($validated) {
+            wp_set_current_user((int) $validated);
+            return (int) $validated;
+        }
+
+        return 0;
     }
 }

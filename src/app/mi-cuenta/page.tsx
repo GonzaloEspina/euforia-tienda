@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import {
-  ACCOUNT_PAGE_URL,
-  getWpAccountLoginUrl,
-} from "@/lib/config";
+import { ACCOUNT_PAGE_URL } from "@/lib/config";
 import { fetchWpSession, getWpPuntosApiBase } from "@/lib/wp-session";
+import { WpLoginForm } from "@/components/WpLoginForm";
 
 type Reward = {
   id: number;
@@ -39,7 +37,9 @@ function normalizeDni(value: string): string | null {
 }
 
 export default function MiCuentaPage() {
-  const [session, setSession] = useState<Awaited<ReturnType<typeof fetchWpSession>> | null>(null);
+  const [session, setSession] = useState<Awaited<ReturnType<typeof fetchWpSession>> | null>(
+    null
+  );
   const [sessionLoading, setSessionLoading] = useState(true);
   const [dniInput, setDniInput] = useState("");
   const [dni, setDni] = useState<string | null>(null);
@@ -52,33 +52,36 @@ export default function MiCuentaPage() {
 
   const wpApi = getWpPuntosApiBase();
 
-  const loadData = useCallback(async (normalizedDni: string) => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const [b, r, h] = await Promise.all([
-        fetchJson<{ balance: number }>(`${wpApi}/balance?dni=${normalizedDni}`, {
-          credentials: "include",
-        }),
-        fetchJson<{ rewards: Reward[] }>(`${wpApi}/rewards`, {
-          credentials: "include",
-        }),
-        fetchJson<{ history: HistoryEntry[] }>(
-          `${wpApi}/history?dni=${normalizedDni}`,
-          { credentials: "include" }
-        ),
-      ]);
-      setDni(normalizedDni);
-      setBalance(b.balance);
-      setRewards(r.rewards ?? []);
-      setHistory(h.history ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al consultar tus puntos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [wpApi]);
+  const loadData = useCallback(
+    async (normalizedDni: string) => {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+      try {
+        const [b, r, h] = await Promise.all([
+          fetchJson<{ balance: number }>(`${wpApi}/balance?dni=${normalizedDni}`, {
+            credentials: "include",
+          }),
+          fetchJson<{ rewards: Reward[] }>(`${wpApi}/rewards`, {
+            credentials: "include",
+          }),
+          fetchJson<{ history: HistoryEntry[] }>(
+            `${wpApi}/history?dni=${normalizedDni}`,
+            { credentials: "include" }
+          ),
+        ]);
+        setDni(normalizedDni);
+        setBalance(b.balance);
+        setRewards(r.rewards ?? []);
+        setHistory(h.history ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Error al consultar tus puntos.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [wpApi]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +121,10 @@ export default function MiCuentaPage() {
 
   const redeem = async (rewardId: number) => {
     if (!dni) return;
+    if (!session?.logged_in) {
+      setError("Ingresá con tu cuenta para canjear premios.");
+      return;
+    }
     setError(null);
     setSuccess(null);
     try {
@@ -145,71 +152,72 @@ export default function MiCuentaPage() {
     return <section className="max-w-5xl mx-auto px-4 py-10">Cargando cuenta...</section>;
   }
 
-  if (!session?.logged_in) {
-    return (
-      <section className="max-w-md mx-auto px-4 py-16">
-        <div className="glass rounded-2xl p-6 text-center space-y-4">
-          <h1 className="text-2xl font-bold">Mi cuenta</h1>
-          <p className="text-travel-ink-muted">
-            Ingresá con tu cuenta de Euforia para ver pedidos, datos y puntos.
-          </p>
-          <a
-            href={getWpAccountLoginUrl()}
-            className="inline-flex w-full items-center justify-center py-3 rounded-xl bg-euforia-sky-dark text-white font-semibold hover:bg-euforia-sky transition-colors"
-          >
-            Ingresar
-          </a>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-      <div className="glass rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Mi cuenta</h1>
-          <p className="text-travel-ink-muted">
-            {session.name ?? "Viajero"} · {session.email}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={ACCOUNT_PAGE_URL}
-            className="px-4 py-2 rounded-xl border border-sky-200 text-sm font-semibold text-euforia-sky-dark hover:bg-sky-50"
-          >
-            Pedidos y datos
-          </a>
-          <Link
-            href="/"
-            className="px-4 py-2 rounded-xl bg-euforia-sky-dark text-white text-sm font-semibold hover:bg-euforia-sky"
-          >
-            Ver salidas
-          </Link>
-        </div>
+      <div className="text-center sm:text-left">
+        <h1 className="text-2xl sm:text-3xl font-bold text-travel-ink">Mi cuenta</h1>
+        <p className="text-travel-ink-muted mt-1">
+          Gestioná tu sesión, consultá puntos y canjeá beneficios.
+        </p>
       </div>
+
+      {session?.logged_in ? (
+        <div className="glass rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-sm text-travel-ink-muted">Sesión activa</p>
+            <p className="font-semibold text-travel-ink">
+              {session.name ?? "Viajero"} · {session.email}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={ACCOUNT_PAGE_URL}
+              className="px-4 py-2 rounded-xl border border-sky-200 text-sm font-semibold text-euforia-sky-dark hover:bg-sky-50"
+            >
+              Pedidos y datos
+            </a>
+            {session.logout_url ? (
+              <a
+                href={session.logout_url}
+                className="px-4 py-2 rounded-xl border border-sky-200 text-sm font-semibold text-travel-ink-muted hover:bg-sky-50"
+              >
+                Salir
+              </a>
+            ) : null}
+            <Link
+              href="/"
+              className="px-4 py-2 rounded-xl bg-euforia-sky-dark text-white text-sm font-semibold hover:bg-euforia-sky"
+            >
+              Ver salidas
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <WpLoginForm />
+      )}
 
       <form onSubmit={onSubmit} className="glass rounded-2xl p-5 space-y-3">
         <h2 className="text-lg font-semibold">Mis puntos Euforia</h2>
-        <div className="flex gap-2">
+        <p className="text-sm text-travel-ink-muted">
+          Consultá tu saldo con tu DNI. Si estás logueado, lo completamos automáticamente cuando
+          esté cargado en tu cuenta.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={dniInput}
             onChange={(e) => setDniInput(e.target.value)}
             placeholder="Ingresá tu DNI"
-            className="flex-1 rounded-xl border border-sky-200 px-3 py-2"
+            className="flex-1 rounded-xl border border-sky-200 px-3 py-2.5"
           />
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 rounded-xl bg-euforia-sky-dark text-white font-semibold disabled:opacity-60"
+            className="px-4 py-2.5 rounded-xl bg-euforia-sky-dark text-white font-semibold disabled:opacity-60"
           >
-            {loading ? "Consultando..." : "Consultar"}
+            {loading ? "Consultando..." : "Consultar puntos"}
           </button>
         </div>
-        <p className="text-sm text-travel-ink-muted">
-          Usamos el mismo DNI de tus compras para acumular y canjear puntos.
-        </p>
       </form>
 
       {error && (
@@ -233,7 +241,7 @@ export default function MiCuentaPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {rewards.map((reward) => {
-              const enabled = balance >= reward.points_cost;
+              const enabled = session?.logged_in && balance >= reward.points_cost;
               return (
                 <article key={reward.id} className="glass rounded-2xl p-4 space-y-2">
                   <p className="text-xs font-bold uppercase tracking-wide text-euforia-sky-dark">
@@ -256,6 +264,11 @@ export default function MiCuentaPage() {
                       Canjear
                     </button>
                   </div>
+                  {!session?.logged_in ? (
+                    <p className="text-xs text-travel-ink-muted">
+                      Ingresá para canjear este premio.
+                    </p>
+                  ) : null}
                 </article>
               );
             })}
