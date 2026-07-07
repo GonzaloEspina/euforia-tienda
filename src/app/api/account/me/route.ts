@@ -9,5 +9,10 @@ export async function GET(request: Request) {
   });
 
   const data = await upstream.json().catch(() => ({}));
-  return NextResponse.json(data, { status: upstream.status });
+  return NextResponse.json(data, {
+    status: upstream.status,
+    headers: {
+      "Cache-Control": "private, no-store, max-age=0",
+    },
+  });
 }

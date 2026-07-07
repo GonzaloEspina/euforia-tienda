@@ -4,10 +4,9 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   ACCOUNT_PAGE_URL,
-  apiUrl,
   getWpAccountLoginUrl,
 } from "@/lib/config";
-import { getWooSiteUrl } from "@/lib/checkout-url";
+import { fetchWpSession, getWpPuntosApiBase } from "@/lib/wp-session";
 
 type Reward = {
   id: number;
@@ -22,13 +21,6 @@ type HistoryEntry = {
   note?: string;
   type: string;
   points: number;
-};
-
-type WpSession = {
-  logged_in: boolean;
-  name?: string;
-  email?: string;
-  dni?: string | null;
 };
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -47,7 +39,7 @@ function normalizeDni(value: string): string | null {
 }
 
 export default function MiCuentaPage() {
-  const [session, setSession] = useState<WpSession | null>(null);
+  const [session, setSession] = useState<Awaited<ReturnType<typeof fetchWpSession>> | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [dniInput, setDniInput] = useState("");
   const [dni, setDni] = useState<string | null>(null);
@@ -58,7 +50,7 @@ export default function MiCuentaPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const wpApi = `${getWooSiteUrl()}/wp-json/euforia-puntos/v1`;
+  const wpApi = getWpPuntosApiBase();
 
   const loadData = useCallback(async (normalizedDni: string) => {
     setLoading(true);
@@ -66,10 +58,15 @@ export default function MiCuentaPage() {
     setSuccess(null);
     try {
       const [b, r, h] = await Promise.all([
-        fetchJson<{ balance: number }>(`${wpApi}/balance?dni=${normalizedDni}`),
-        fetchJson<{ rewards: Reward[] }>(`${wpApi}/rewards`),
+        fetchJson<{ balance: number }>(`${wpApi}/balance?dni=${normalizedDni}`, {
+          credentials: "include",
+        }),
+        fetchJson<{ rewards: Reward[] }>(`${wpApi}/rewards`, {
+          credentials: "include",
+        }),
         fetchJson<{ history: HistoryEntry[] }>(
-          `${wpApi}/history?dni=${normalizedDni}`
+          `${wpApi}/history?dni=${normalizedDni}`,
+          { credentials: "include" }
         ),
       ]);
       setDni(normalizedDni);
@@ -88,18 +85,10 @@ export default function MiCuentaPage() {
 
     async function loadSession() {
       try {
-        const res = await fetch(apiUrl("/api/account/me"), {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (!res.ok) {
-          if (!cancelled) setSession({ logged_in: false });
-          return;
-        }
-        const data = (await res.json()) as WpSession;
+        const data = await fetchWpSession();
         if (!cancelled) {
           setSession(data);
-          if (data.dni) {
+          if (data.logged_in && data.dni) {
             setDniInput(data.dni);
             await loadData(data.dni);
           }
@@ -133,7 +122,7 @@ export default function MiCuentaPage() {
     setSuccess(null);
     try {
       const result = await fetchJson<{ message?: string; coupon_code?: string }>(
-        apiUrl("/api/puntos/redeem"),
+        `${wpApi}/redeem`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
