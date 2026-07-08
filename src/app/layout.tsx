@@ -77,6 +77,23 @@ export default function RootLayout({
                       Euforia Viajes — Leg. 16816
                     </span>
                   </p>
+                  <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-travel-ink-muted pt-2">
+                    <a href="/tienda/quienes-somos" className="hover:text-euforia-sky-dark hover:underline">
+                      Quiénes somos
+                    </a>
+                    <a href="/tienda/datos-bancarios" className="hover:text-euforia-sky-dark hover:underline">
+                      Datos bancarios
+                    </a>
+                    <a
+                      href="/tienda/condiciones-generales"
+                      className="hover:text-euforia-sky-dark hover:underline"
+                    >
+                      Condiciones generales
+                    </a>
+                    <a href="/tienda/blog" className="hover:text-euforia-sky-dark hover:underline">
+                      Blog
+                    </a>
+                  </nav>
                 </div>
               </footer>
             </div>

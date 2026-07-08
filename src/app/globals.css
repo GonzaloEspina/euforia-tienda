@@ -53,3 +53,27 @@ body {
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+
+.wp-content :where(img) {
+  @apply rounded-xl max-w-full h-auto my-6;
+}
+
+.wp-content :where(p) {
+  @apply text-travel-ink-muted leading-relaxed mb-4;
+}
+
+.wp-content :where(h2, h3, h4) {
+  @apply text-travel-ink font-bold mt-8 mb-3;
+}
+
+.wp-content :where(ul, ol) {
+  @apply my-4 pl-6 text-travel-ink-muted space-y-2;
+}
+
+.wp-content :where(a) {
+  @apply text-euforia-sky-dark font-medium hover:underline;
+}
+
+.wp-content :where(blockquote) {
+  @apply border-l-4 border-euforia-sky pl-4 italic text-travel-ink-muted my-6;
+}

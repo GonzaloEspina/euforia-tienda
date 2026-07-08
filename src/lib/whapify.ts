@@ -1,4 +1,5 @@
 import type { CotizacionRequest } from "@/types/cotizacion";
+import type { ContactRequest } from "@/types/contacto";
 import {
   formatCotizacionForAgent,
   getCotizacionWebTag,
@@ -318,6 +319,89 @@ export async function submitCotizacionToWhapify(
 
   const contactId = await createOrUpdateContact(data, phone);
   await createOpportunity(contactId, data);
+
+  return { contactId };
+}
+
+function formatContactFormForAgent(data: ContactRequest): string {
+  const lines = [
+    "📩 Consulta desde Quiénes somos (PWA)",
+    `👤 ${data.nombre}`,
+    `✉️ ${data.email}`,
+    `📱 WhatsApp: ${data.whatsapp}`,
+  ];
+  if (data.pasajeros) lines.push(`👥 Pasajeros: ${data.pasajeros}`);
+  if (data.menores) lines.push(`🧒 Menores: ${data.menores}`);
+  lines.push(`💬 ${data.mensaje}`);
+  return lines.join("\n");
+}
+
+function buildContactFormActions(data: ContactRequest): WhapifyAction[] {
+  const detalle = formatContactFormForAgent(data);
+  const locale = DEFAULT_CONTACT_LOCALE;
+  const locale2 = locale.split("_")[0] || "es";
+
+  return [
+    { action: "set_field_value", field_name: "locale", value: locale },
+    { action: "set_field_value", field_name: "locale2", value: locale2 },
+    { action: "set_field_value", field_name: "contacto_mensaje", value: data.mensaje },
+    { action: "set_field_value", field_name: "contacto_detalle", value: detalle },
+    { action: "set_field_value", field_name: "contacto_fecha", value: String(Math.floor(Date.now() / 1000)) },
+  ];
+}
+
+export async function submitContactToWhapify(
+  data: ContactRequest
+): Promise<{ contactId: string }> {
+  const phone = normalizeWhatsAppPhone(data.whatsapp);
+  if (!phone || phone.length < 10) {
+    throw new Error("Número de WhatsApp inválido");
+  }
+
+  const nameParts = data.nombre.trim().split(/\s+/);
+  const firstName = nameParts[0] ?? data.nombre;
+  const lastName = nameParts.slice(1).join(" ") || undefined;
+
+  const body: CreateContactBody = {
+    phone,
+    email: data.email,
+    first_name: firstName,
+    last_name: lastName,
+    actions: buildContactFormActions(data),
+  };
+
+  const response = await whapifyFetch<CreateContactResponse>("/contacts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  let contactId = extractContactId(response);
+  if (!contactId) {
+    contactId = await findContactByPhone(phone);
+  }
+
+  if (!contactId) {
+    throw new Error("Whapify no devolvió el ID del contacto");
+  }
+
+  await applyTags(contactId, ["Contacto Web", "Euforia Tienda"]);
+  await ensureContactLocale(contactId);
+
+  const pipelineId = process.env.WHAPIFY_PIPELINE_ID;
+  if (pipelineId) {
+    await whapifyFetch(`/pipelines/${pipelineId}/opportunities`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contact_id: contactId,
+        title: `Consulta web: ${data.nombre}`,
+        description: formatContactFormForAgent(data),
+        status: "open",
+        priority: "medium",
+      }),
+    });
+  }
 
   return { contactId };
 }

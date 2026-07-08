@@ -22,7 +22,8 @@
 
  *
 
- * Blog, nosotros, mi-cuenta de WordPress quedan fuera del worker. */
+ * Blog, FAQ y mi-cuenta de WordPress quedan fuera del worker salvo rutas
+ * mapeadas abajo (blog, quienes-somos, datos bancarios, condiciones). */
 
 
 
@@ -67,7 +68,25 @@ function resolveUpstreamPath(pathname, search) {
 
   }
 
+  const contentRoutes = [
+    ["/blog", "/tienda/blog"],
+    ["/blogs", "/tienda/blog"],
+    ["/quienes-somos", "/tienda/quienes-somos"],
+    ["/nosotros", "/tienda/quienes-somos"],
+    ["/contacto", "/tienda/quienes-somos"],
+    ["/datos-bancarios", "/tienda/datos-bancarios"],
+    ["/condiciones-generales", "/tienda/condiciones-generales"],
+  ];
 
+  for (const [publicPath, upstreamPath] of contentRoutes) {
+    if (pathname === publicPath || pathname === `${publicPath}/`) {
+      return `${upstreamPath}${search}`;
+    }
+    if (pathname.startsWith(`${publicPath}/`)) {
+      const rest = pathname.slice(publicPath.length);
+      return `${upstreamPath}${rest}${search}`;
+    }
+  }
 
   return null;
 
