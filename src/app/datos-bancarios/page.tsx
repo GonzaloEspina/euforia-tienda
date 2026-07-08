@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BankDetailRow } from "@/components/BankDetailRow";
 import { PageHero } from "@/components/PageHero";
 import { BANK_DETAILS, COMPANY } from "@/lib/company-content";
 
@@ -7,14 +8,6 @@ export const metadata: Metadata = {
   description:
     "Datos bancarios de Euforia Viajes para transferencias y pagos. Titular ROLLFER SRL.",
 };
-
-const FIELDS = [
-  { label: "Titular", value: BANK_DETAILS.holder, copy: false },
-  { label: "CUIT", value: BANK_DETAILS.cuit, copy: true },
-  { label: "Alias", value: BANK_DETAILS.alias, copy: true },
-  { label: "CVU", value: BANK_DETAILS.cvu, copy: true },
-  { label: "Email", value: BANK_DETAILS.email, copy: true, href: `mailto:${BANK_DETAILS.email}` },
-] as const;
 
 export default function DatosBancariosPage() {
   return (
@@ -33,25 +26,14 @@ export default function DatosBancariosPage() {
           </div>
 
           <dl className="divide-y divide-sky-100">
-            {FIELDS.slice(1).map((field) => (
-              <div
-                key={field.label}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-6 py-4"
-              >
-                <dt className="text-sm font-semibold text-euforia-sky-dark uppercase tracking-wide">
-                  {field.label}
-                </dt>
-                <dd className="text-base font-mono font-semibold text-travel-ink break-all">
-                  {"href" in field && field.href ? (
-                    <a href={field.href} className="hover:text-euforia-sky-dark hover:underline">
-                      {field.value}
-                    </a>
-                  ) : (
-                    field.value
-                  )}
-                </dd>
-              </div>
-            ))}
+            <BankDetailRow label="CUIT" value={BANK_DETAILS.cuit} />
+            <BankDetailRow label="Alias" value={BANK_DETAILS.alias} copyable />
+            <BankDetailRow label="CVU" value={BANK_DETAILS.cvu} copyable />
+            <BankDetailRow
+              label="Email"
+              value={BANK_DETAILS.email}
+              href={`mailto:${BANK_DETAILS.email}`}
+            />
           </dl>
         </div>
 

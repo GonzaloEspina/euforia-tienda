@@ -20,7 +20,6 @@ const MAIN_LINKS = [
   { href: salidasGrupalesHref(), label: "Salidas Grupales", external: false },
   { href: "/cotizar/personalizada", label: "Armá tu Viaje", external: false },
   { href: "/blog", label: "Blog", external: false },
-  { href: `${SITE_URL}/faq`, label: "FAQ", external: true },
   { href: "/quienes-somos#contacto", label: "Contacto", external: false },
 ] as const;
 

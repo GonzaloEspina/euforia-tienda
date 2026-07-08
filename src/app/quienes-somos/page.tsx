@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ContactForm } from "@/components/ContactForm";
 import { PageHero } from "@/components/PageHero";
 import {
@@ -41,6 +40,8 @@ const INFO_CARDS = [
 ] as const;
 
 export default function QuienesSomosPage() {
+  const branch = BRANCHES[0];
+
   return (
     <>
       <PageHero
@@ -115,54 +116,53 @@ export default function QuienesSomosPage() {
         </div>
       </section>
 
-      <section id="contacto" className="border-y border-sky-100 bg-travel-bg-soft py-12 sm:py-16 scroll-mt-28">
-        <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-10 items-start">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-travel-ink">
-              Dejanos tus datos y nos contactamos
-            </h2>
-            <p className="mt-3 text-travel-ink-muted max-w-lg">
-              Completá el formulario y un asesor de Euforia Viajes te responderá a la brevedad por
-              WhatsApp o correo electrónico.
-            </p>
-          </div>
-          <div className="glass rounded-2xl p-6">
-            <ContactForm />
-          </div>
-        </div>
-      </section>
+      <section
+        id="contacto"
+        className="border-y border-sky-100 bg-travel-bg-soft py-12 sm:py-16 scroll-mt-28"
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-travel-ink text-center mb-10">
+            Acercate a nuestra sucursal
+          </h2>
 
-      <section className="max-w-7xl mx-auto px-4 py-12 sm:py-16">
-        <h2 className="text-2xl sm:text-3xl font-bold text-travel-ink text-center mb-8">
-          ¡Acercate a cualquiera de nuestras sucursales!
-        </h2>
-        <div className="grid gap-8">
-          {BRANCHES.map((branch) => (
-            <div
-              key={branch.name}
-              className="grid lg:grid-cols-[280px_1fr] gap-6 rounded-2xl border border-sky-100 bg-white overflow-hidden shadow-sm"
-            >
-              <div className="p-6 flex flex-col justify-center bg-gradient-to-br from-sky-50 to-white">
+          <div className="grid lg:grid-cols-2 gap-8 items-stretch">
+            <div className="rounded-2xl border border-sky-100 bg-white overflow-hidden shadow-sm flex flex-col">
+              <div className="p-6 bg-gradient-to-br from-sky-50 to-white border-b border-sky-100">
                 <h3 className="text-xl font-bold text-travel-ink">{branch.name}</h3>
                 <p className="mt-2 text-travel-ink-muted">{branch.address}</p>
-                <Link
-                  href="/quienes-somos#contacto"
-                  className="mt-4 inline-flex text-sm font-semibold text-euforia-sky-dark hover:underline"
+                <a
+                  href={COMPANY.addressHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex text-sm font-semibold text-euforia-sky-dark hover:underline"
                 >
-                  Consultanos →
-                </Link>
+                  Ver en Google Maps →
+                </a>
               </div>
-              <div className="min-h-[280px] bg-sky-50">
+              <div className="flex-1 min-h-[320px] bg-sky-50">
                 <iframe
                   title={`Mapa ${branch.name}`}
                   src={COMPANY.mapEmbed}
-                  className="w-full h-full min-h-[280px] border-0"
+                  className="w-full h-full min-h-[320px] border-0"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               </div>
             </div>
-          ))}
+
+            <div className="glass rounded-2xl p-6 flex flex-col">
+              <div className="mb-6">
+                <h3 className="text-xl sm:text-2xl font-bold text-travel-ink">
+                  Dejanos tus datos y nos contactamos
+                </h3>
+                <p className="mt-3 text-travel-ink-muted">
+                  Completá el formulario y un asesor de Euforia Viajes te responderá a la brevedad
+                  por WhatsApp o correo electrónico.
+                </p>
+              </div>
+              <ContactForm />
+            </div>
+          </div>
         </div>
       </section>
     </>

@@ -202,3 +202,19 @@ export function formatPostDate(iso: string): string {
     year: "numeric",
   }).format(new Date(iso));
 }
+
+export function getRelatedPosts(
+  allPosts: WpPostSummary[],
+  current: Pick<WpPostSummary, "slug" | "categories">,
+  limit = 3
+): WpPostSummary[] {
+  const categoryIds = new Set(current.categories.map((cat) => cat.id));
+  const others = allPosts.filter((post) => post.slug !== current.slug);
+
+  const byCategory = others.filter((post) =>
+    post.categories.some((cat) => categoryIds.has(cat.id))
+  );
+
+  const pool = byCategory.length >= limit ? byCategory : others;
+  return pool.slice(0, limit);
+}

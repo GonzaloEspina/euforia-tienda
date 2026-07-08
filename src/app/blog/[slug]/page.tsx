@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BlogPostCard } from "@/components/BlogExplorer";
 import {
   fetchAllWpPosts,
   fetchWpPostBySlug,
   formatPostDate,
+  getRelatedPosts,
 } from "@/lib/wordpress-content";
 
 type Props = {
@@ -37,9 +39,14 @@ export const revalidate = 300;
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = await fetchWpPostBySlug(slug);
+  const [post, allPosts] = await Promise.all([
+    fetchWpPostBySlug(slug),
+    fetchAllWpPosts().catch(() => []),
+  ]);
 
   if (!post) notFound();
+
+  const related = getRelatedPosts(allPosts, post, 3);
 
   return (
     <article>
@@ -90,7 +97,29 @@ export default async function BlogPostPage({ params }: Props) {
           className="wp-content max-w-none"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
+
+        <div className="mt-12 pt-8 border-t border-sky-100">
+          <Link
+            href="/blog"
+            className="inline-flex text-sm font-semibold text-euforia-sky-dark hover:underline"
+          >
+            ← Volver al blog
+          </Link>
+        </div>
       </div>
+
+      {related.length > 0 ? (
+        <section className="border-t border-sky-100 bg-travel-bg-soft py-12 sm:py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-2xl font-bold text-travel-ink mb-8">Blogs relacionados</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {related.map((item) => (
+                <BlogPostCard key={item.id} post={item} />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }
